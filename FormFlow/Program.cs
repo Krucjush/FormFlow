@@ -1,5 +1,7 @@
 using AspNetCore.Identity.Mongo;
+using AspNetCore.Identity.Mongo.Model;
 using FormFlow.Data;
+using FormFlow.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
@@ -20,6 +22,28 @@ namespace FormFlow
 				var client = serviceProvider.GetRequiredService<IMongoClient>();
 				// ReSharper disable once StringLiteralTypo
 				return client.GetDatabase("formresultscluster");
+			});
+
+			builder.Services.AddIdentityMongoDbProvider<MongoUser>();
+			builder.Services.Configure<IdentityOptions>(o =>
+			{
+				// Password requirements
+				o.Password.RequireDigit = true;
+				o.Password.RequireLowercase = true;
+				o.Password.RequireLowercase = true;
+				o.Password.RequireNonAlphanumeric = true;
+				o.Password.RequiredLength = 8;
+
+				// Lockout settings
+				o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+				o.Lockout.MaxFailedAccessAttempts = 5;
+
+				// Sign-in settings
+				o.SignIn.RequireConfirmedEmail = true;
+				o.SignIn.RequireConfirmedPhoneNumber = false;
+
+				// Email requirements
+				o.User.RequireUniqueEmail = true;
 			});
 
 			builder.Services.AddControllersWithViews();

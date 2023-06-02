@@ -1,9 +1,10 @@
-﻿using MongoDB.Bson;
+﻿using Microsoft.AspNetCore.Identity;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace FormFlow.Models
 {
-	public class User
+	public class User : IdentityUser
 	{
 		[BsonId]
 		[BsonRepresentation(BsonType.ObjectId)]
