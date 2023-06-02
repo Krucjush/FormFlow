@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FormFlow", "FormFlow.csproj", "{8D578C92-9449-4305-82C2-600F7530F152}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8D578C92-9449-4305-82C2-600F7530F152}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D578C92-9449-4305-82C2-600F7530F152}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D578C92-9449-4305-82C2-600F7530F152}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D578C92-9449-4305-82C2-600F7530F152}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F5600400-3651-4AF8-A14C-52B1AA3E2418}
+	EndGlobalSection
+EndGlobal
