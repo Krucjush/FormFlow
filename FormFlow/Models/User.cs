@@ -4,7 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace FormFlow.Models
 {
-	public class User : IdentityUser
+	public class User
 	{
 		[BsonId]
 		[BsonRepresentation(BsonType.ObjectId)]

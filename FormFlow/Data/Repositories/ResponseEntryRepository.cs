@@ -5,31 +5,31 @@ namespace FormFlow.Data.Repositories
 {
 	public class ResponseEntryRepository
 	{
-		private readonly IMongoCollection<Form> _forms;
+		private readonly IMongoCollection<ResponseEntry> _responseEntries;
 
 		public ResponseEntryRepository(MongoDbContext dbContext)
 		{
-			_forms = dbContext.Forms;
+			_responseEntries = dbContext.ResponseEntries;
 		}
 
-		public void Create(Form form)
+		public void Create(ResponseEntry responseEntry)
 		{
-			_forms.InsertOne(form);
+			_responseEntries.InsertOne(responseEntry);
 		}
 
-		public Form GetById(string id)
+		public ResponseEntry GetById(string id)
 		{
-			return _forms.Find(f => f.Id == id).FirstOrDefault();
+			return _responseEntries.Find(f => f.Id == id).FirstOrDefault();
 		}
 
-		public void Update(Form form)
+		public void Update(ResponseEntry responseEntry)
 		{
-			_forms.ReplaceOne(f => f.Id == form.Id, form);
+			_responseEntries.ReplaceOne(f => f.Id == responseEntry.Id, responseEntry);
 		}
 
 		public void Delete(string id)
 		{
-			_forms.DeleteOne(f => f.Id == id);
+			_responseEntries.DeleteOne(f => f.Id == id);
 		}
 	}
 }
