@@ -1,6 +1,8 @@
 ﻿using FormFlow.Data.Repositories;
 using FormFlow.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using FormFlow.Models.Enums;
 
 namespace FormFlow.Controllers
 {
@@ -9,10 +11,12 @@ namespace FormFlow.Controllers
 	public class UserController : Controller
 	{
 		private readonly UserRepository _userRepository;
+		private readonly FormRepository _formRepository;
 
-		public UserController(UserRepository userRepository)
+		public UserController(UserRepository userRepository, FormRepository formRepository)
 		{
 			_userRepository = userRepository;
+			_formRepository = formRepository;
 		}
 
 		[HttpGet]
@@ -38,7 +42,17 @@ namespace FormFlow.Controllers
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> Delete(string id)
 		{
+			var existingUser = await _userRepository.GetByIdAsync(id);
+			if (existingUser == null)
+			{
+				return NotFound();
+			}
+
+			// Disassociate the forms from the user by setting the OwnerId to null
+			await _formRepository.DisassociateFormsFromUserAsync(id);
+
 			await _userRepository.DeleteAsync(id);
+
 			return NoContent();
 		}
 	}

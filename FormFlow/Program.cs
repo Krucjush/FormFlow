@@ -1,5 +1,6 @@
 using AspNetCore.Identity.Mongo;
 using AspNetCore.Identity.Mongo.Model;
+using FormFlow.Controllers;
 using FormFlow.Data;
 using FormFlow.Data.Repositories;
 using FormFlow.Models;
@@ -19,6 +20,15 @@ namespace FormFlow
 
 			builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
 			builder.Services.AddSingleton<UserRepository>();
+			builder.Services.AddSingleton<FormRepository>();
+			builder.Services.AddSingleton<FormResponseRepository>();
+			builder.Services.AddSingleton<QuestionRepository>();
+			builder.Services.AddSingleton<ResponseEntryRepository>();
+			builder.Services.AddSingleton<UserController>();
+			builder.Services.AddSingleton<FormController>();
+			builder.Services.AddSingleton<QuestionController>();
+			builder.Services.AddSingleton<ResponseEntryController>();
+			builder.Services.AddSingleton<FormResponseController>();
 
 			// Add services to the container.
 			var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");

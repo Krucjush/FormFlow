@@ -13,6 +13,6 @@ namespace FormFlow.Models
 		[BsonElement("Email")] 
 		public string Email { get; set; }
 		[BsonElement("Responses")] 
-		public List<ResponseEntry> Responses { get; set; }
+		public List<ResponseEntry>? Responses { get; set; }
 	}
 }

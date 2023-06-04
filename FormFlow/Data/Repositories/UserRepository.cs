@@ -13,7 +13,7 @@ namespace FormFlow.Data.Repositories
 		{
 			var client = new MongoClient(mongoDbSettings.Value.ConnectionURI);
 			var database = client.GetDatabase(mongoDbSettings.Value.DatabaseName);
-			_users = database.GetCollection<User>(mongoDbSettings.Value.CollectionName);
+			_users = database.GetCollection<User>(mongoDbSettings.Value.Collections["User"]);
 		}
 
 		public async Task CreateAsync(User user)
@@ -24,6 +24,10 @@ namespace FormFlow.Data.Repositories
 		public async Task<List<User>> GetAsync()
 		{
 			return await _users.Find(new BsonDocument()).ToListAsync();
+		}
+		public async Task<User> GetByIdAsync(string id)
+		{
+			return await _users.Find(f => f.Id == id).FirstOrDefaultAsync();
 		}
 
 		public async Task AddFormAsync(string id, Form form)
