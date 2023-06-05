@@ -1,4 +1,6 @@
 ﻿using FormFlow.Models;
+using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace FormFlow.Data.Repositories
@@ -6,30 +8,52 @@ namespace FormFlow.Data.Repositories
 	public class FormRepository
 	{
 		private readonly IMongoCollection<Form> _forms;
+		private readonly IMongoCollection<FormResponse> _formsResponses;
 
-		public FormRepository(MongoDbContext dbContext)
+		public FormRepository(IOptions<MongoDBSettings> mongoDbSettings)
 		{
-			_forms = dbContext.Forms;
+			var client = new MongoClient(mongoDbSettings.Value.ConnectionURI);
+			var database = client.GetDatabase(mongoDbSettings.Value.DatabaseName);
+			_forms = database.GetCollection<Form>(mongoDbSettings.Value.Collections["Form"]);
+			_formsResponses = database.GetCollection<FormResponse>(mongoDbSettings.Value.Collections["FormResponse"]);
 		}
 
-		public void Create(Form form)
+		public async Task CreateAsync(Form form)
 		{
-			_forms.InsertOne(form);
+			await _forms.InsertOneAsync(form);
 		}
 
-		public Form GetById(string id)
+		public async Task<List<Form>> GetAsync()
 		{
-			return _forms.Find(f => f.Id == id).FirstOrDefault();
+			return await _forms.Find(new BsonDocument()).ToListAsync();
 		}
 
-		public void Update(Form form)
+		public async Task<Form> GetByIdAsync(string id)
 		{
-			_forms.ReplaceOne(f => f.Id == form.Id, form);
+			return await _forms.Find(f => f.Id == id).FirstOrDefaultAsync();
 		}
 
-		public void Delete(string id)
+		public async Task UpdateAsync(Form form)
 		{
-			_forms.DeleteOne(f => f.Id == id);
+			await _forms.ReplaceOneAsync(f => f.Id == form.Id, form);
+		}
+
+		public async Task DeleteAsync(string id)
+		{
+			await _forms.DeleteOneAsync(f => f.Id == id);
+		}
+
+		public async Task<bool> HasResponsesAsync(string formId)
+		{
+			var count = await _formsResponses.CountDocumentsAsync(r => r.FormId == formId);
+			return count > 0;
+		}
+
+		public async Task DisassociateFormsFromUserAsync(string userId)
+		{
+			var filter = Builders<Form>.Filter.Eq("OwnerId", userId);
+			var update = Builders<Form>.Update.Set<string?>("OwnerId", null); // Set the OwnerId to null
+			await _forms.UpdateManyAsync(filter, update);
 		}
 	}
 }

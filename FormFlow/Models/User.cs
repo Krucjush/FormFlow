@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using FormFlow.Models.Enums;
+using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace FormFlow.Models
 {
-	public class User : IdentityUser
+	public class User
 	{
 		[BsonId]
 		[BsonRepresentation(BsonType.ObjectId)]
@@ -14,8 +15,8 @@ namespace FormFlow.Models
 		[BsonElement("PasswordHash")] 
 		public string PasswordHash { get; set; }
 		[BsonElement("Roles")]
-		public string[] Roles { get; set; }
+		public Roles[] Roles { get; set; }
 		[BsonElement("Forms")] 
-		public List<Form> Forms { get; set; }
+		public List<Form>? Forms { get; set; }
 	}
 }

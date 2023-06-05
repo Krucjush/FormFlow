@@ -1,35 +1,46 @@
 ﻿using FormFlow.Models;
+using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace FormFlow.Data.Repositories
 {
 	public class FormResponseRepository
 	{
-		private readonly IMongoCollection<Form> _forms;
+		private readonly IMongoCollection<FormResponse> _formResponses;
 
-		public FormResponseRepository(MongoDbContext dbContext)
+		public FormResponseRepository(IOptions<MongoDBSettings> mongoDbSettings)
 		{
-			_forms = dbContext.Forms;
+			var client = new MongoClient(mongoDbSettings.Value.ConnectionURI);
+			var database = client.GetDatabase(mongoDbSettings.Value.DatabaseName);
+			_formResponses = database.GetCollection<FormResponse>(mongoDbSettings.Value.Collections["FormResponse"]);
 		}
 
-		public void Create(Form form)
+		public async Task<List<FormResponse>> GetAsync()
 		{
-			_forms.InsertOne(form);
+			return await _formResponses.Find(new BsonDocument()).ToListAsync();
 		}
 
-		public Form GetById(string id)
+		public async Task<FormResponse> GetByIdAsync(string id)
 		{
-			return _forms.Find(f => f.Id == id).FirstOrDefault();
+			return await _formResponses.Find(r => r.Id == id).FirstOrDefaultAsync();
 		}
 
-		public void Update(Form form)
+		public async Task CreateAsync(FormResponse formResponse)
 		{
-			_forms.ReplaceOne(f => f.Id == form.Id, form);
+			await _formResponses.InsertOneAsync(formResponse);
 		}
 
-		public void Delete(string id)
+		public async Task UpdateAsync(FormResponse formResponse)
 		{
-			_forms.DeleteOne(f => f.Id == id);
+			var filter = Builders<FormResponse>.Filter.Eq(r => r.Id, formResponse.Id);
+			await _formResponses.ReplaceOneAsync(filter, formResponse);
+		}
+
+		public async Task DeleteAsync(string id)
+		{
+			var filter = Builders<FormResponse>.Filter.Eq(r => r.Id, id);
+			await _formResponses.DeleteOneAsync(filter);
 		}
 	}
 }

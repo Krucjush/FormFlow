@@ -1,10 +1,14 @@
 using AspNetCore.Identity.Mongo;
 using AspNetCore.Identity.Mongo.Model;
+using FormFlow.Controllers;
 using FormFlow.Data;
+using FormFlow.Data.Repositories;
 using FormFlow.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
+using Microsoft.Extensions.Options;
 
 namespace FormFlow
 {
@@ -14,38 +18,26 @@ namespace FormFlow
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
+			builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
+			builder.Services.AddSingleton<UserRepository>();
+			builder.Services.AddSingleton<FormRepository>();
+			builder.Services.AddSingleton<FormResponseRepository>();
+			builder.Services.AddSingleton<QuestionRepository>();
+			builder.Services.AddSingleton<ResponseEntryRepository>();
+			builder.Services.AddSingleton<UserController>();
+			builder.Services.AddSingleton<FormController>();
+			builder.Services.AddSingleton<QuestionController>();
+			builder.Services.AddSingleton<ResponseEntryController>();
+			builder.Services.AddSingleton<FormResponseController>();
+
 			// Add services to the container.
 			var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-			builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
-			builder.Services.AddScoped<IMongoDatabase>(serviceProvider =>
-			{
-				var client = serviceProvider.GetRequiredService<IMongoClient>();
-				// ReSharper disable once StringLiteralTypo
-				return client.GetDatabase("formresultscluster");
-			});
+			builder.Services.AddDbContext<ApplicationDbContext>(options =>
+				options.UseSqlServer(connectionString));
+			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-			builder.Services.AddIdentityMongoDbProvider<MongoUser>();
-			builder.Services.Configure<IdentityOptions>(o =>
-			{
-				// Password requirements
-				o.Password.RequireDigit = true;
-				o.Password.RequireLowercase = true;
-				o.Password.RequireLowercase = true;
-				o.Password.RequireNonAlphanumeric = true;
-				o.Password.RequiredLength = 8;
-
-				// Lockout settings
-				o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-				o.Lockout.MaxFailedAccessAttempts = 5;
-
-				// Sign-in settings
-				o.SignIn.RequireConfirmedEmail = true;
-				o.SignIn.RequireConfirmedPhoneNumber = false;
-
-				// Email requirements
-				o.User.RequireUniqueEmail = true;
-			});
-
+			builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+				.AddEntityFrameworkStores<ApplicationDbContext>();
 			builder.Services.AddControllersWithViews();
 
 			var app = builder.Build();

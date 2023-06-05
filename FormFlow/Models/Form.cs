@@ -16,6 +16,6 @@ namespace FormFlow.Models
 		[BsonElement("Status")]
 		public FormStatus Status { get; set; }
 		[BsonElement("OwnerId")] 
-		public string OwnerId { get; set; }
+		public string? OwnerId { get; set; }
 	}
 }
