@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FormFlow.Controllers
 {
 	[Controller]
-	[Route("api/[controller]")]
+	[Route("[controller]")]
 	public class FormController : Controller
 	{
 		private readonly FormRepository _formRepository;

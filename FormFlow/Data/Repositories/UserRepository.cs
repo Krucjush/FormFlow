@@ -9,6 +9,11 @@ namespace FormFlow.Data.Repositories
 	{
 		private readonly IMongoCollection<User> _users;
 
+		public UserRepository()
+		{
+			// This constructor is needed for testing or any other scenarios where you don't want to provide the dependencies
+		}
+
 		public UserRepository(IOptions<MongoDBSettings> mongoDbSettings)
 		{
 			var client = new MongoClient(mongoDbSettings.Value.ConnectionURI);
@@ -16,7 +21,7 @@ namespace FormFlow.Data.Repositories
 			_users = database.GetCollection<User>(mongoDbSettings.Value.Collections["User"]);
 		}
 
-		public async Task CreateAsync(User user)
+		public virtual async Task CreateAsync(User user)
 		{
 			await _users.InsertOneAsync(user);
 		}
@@ -24,6 +29,10 @@ namespace FormFlow.Data.Repositories
 		public async Task<List<User>> GetAsync()
 		{
 			return await _users.Find(new BsonDocument()).ToListAsync();
+		}
+		public async Task<User> GetByEmailAsync(string email)
+		{
+			return await _users.Find(f => f.Email == email).FirstOrDefaultAsync();
 		}
 		public async Task<User> GetByIdAsync(string id)
 		{

@@ -1,22 +1,28 @@
-﻿using FormFlow.Data.Repositories;
+﻿using System.IdentityModel.Tokens.Jwt;
+using FormFlow.Data.Repositories;
 using FormFlow.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
+using System.Text;
 using FormFlow.Models.Enums;
+using Microsoft.AspNetCore.Identity;
+using FormFlow.JWT;
 
 namespace FormFlow.Controllers
 {
-	[Controller]
-	[Route("api/[controller]")]
+    [Controller]
+	[Route("[controller]")]
 	public class UserController : Controller
 	{
 		private readonly UserRepository _userRepository;
 		private readonly FormRepository _formRepository;
+		private readonly JwtSettings _jwtSettings;
 
-		public UserController(UserRepository userRepository, FormRepository formRepository)
+		public UserController(UserRepository userRepository, FormRepository formRepository, JwtSettings jwtSettings)
 		{
 			_userRepository = userRepository;
 			_formRepository = formRepository;
+			_jwtSettings = jwtSettings;
 		}
 
 		[HttpGet]
@@ -54,6 +60,41 @@ namespace FormFlow.Controllers
 			await _userRepository.DeleteAsync(id);
 
 			return NoContent();
+		}
+		[HttpGet("register")]
+		public IActionResult Register()
+		{
+			return View();
+		}
+
+		[HttpPost("register")]
+		public async Task<IActionResult> Register(UserRegistrationModel model)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			var user = new User
+			{
+				Email = model.Email,
+				PasswordHash = HashPassword(model.Password)
+			};
+			try
+			{
+				await _userRepository.CreateAsync(user);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, "An error occurred while registering the user.");
+			}
+
+			return RedirectToAction("Index", "Home");
+		}
+
+		public string HashPassword(string password)
+		{
+			return BCrypt.Net.BCrypt.HashPassword(password);
 		}
 	}
 }
