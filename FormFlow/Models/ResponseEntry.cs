@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using System.ComponentModel.DataAnnotations;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace FormFlow.Models
@@ -8,9 +9,11 @@ namespace FormFlow.Models
 		[BsonId]
 		[BsonRepresentation(BsonType.ObjectId)]
 		public string Id { get; set; }
-		[BsonElement("QuestionId")] 
+		[BsonElement("QuestionId")]
+		[Required(ErrorMessage = "QuestionId is required.")]
 		public string QuestionId { get; set; }
-		[BsonElement("Answer")] 
+		[BsonElement("Answer")]
+		[Required(ErrorMessage = "Answer is required.")]
 		public string Answer { get; set; }
 	}
 }
