@@ -10,6 +10,11 @@ namespace FormFlow.Data.Repositories
 		private readonly IMongoCollection<Form> _forms;
 		private readonly IMongoCollection<FormResponse> _formsResponses;
 
+		public FormRepository()
+		{
+			// This constructor is needed for testing or any other scenarios where you don't want to provide the dependencies
+		}
+
 		public FormRepository(IOptions<MongoDBSettings> mongoDbSettings)
 		{
 			var client = new MongoClient(mongoDbSettings.Value.ConnectionURI);
@@ -18,7 +23,7 @@ namespace FormFlow.Data.Repositories
 			_formsResponses = database.GetCollection<FormResponse>(mongoDbSettings.Value.Collections["FormResponse"]);
 		}
 
-		public async Task CreateAsync(Form form)
+		public virtual async Task CreateAsync(Form form)
 		{
 			await _forms.InsertOneAsync(form);
 		}
