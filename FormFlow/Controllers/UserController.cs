@@ -4,6 +4,7 @@ using FormFlow.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using FormFlow.JWT;
@@ -75,6 +76,24 @@ namespace FormFlow.Controllers
 				return BadRequest(ModelState);
 			}
 
+			if (!IsValidPassword(model.Password))
+			{
+				ModelState.AddModelError("Password", "Password does not meet the requirements");
+				return BadRequest(ModelState);
+			}
+
+			if (!IsValidEmail(model.Email))
+			{
+				ModelState.AddModelError("Email", "Invalid email format.");
+				return BadRequest(ModelState);
+			}
+
+			if (model.Password != model.ConfirmPassword)
+			{
+				ModelState.AddModelError("ConfirmPassword", "Password and Confirm Password do not match.");
+				return BadRequest(ModelState);
+			}
+
 			var user = new User
 			{
 				Email = model.Email,
@@ -84,7 +103,7 @@ namespace FormFlow.Controllers
 			{
 				await _userRepository.CreateAsync(user);
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, "An error occurred while registering the user.");
 			}
@@ -95,6 +114,57 @@ namespace FormFlow.Controllers
 		public string HashPassword(string password)
 		{
 			return BCrypt.Net.BCrypt.HashPassword(password);
+		}
+
+		private static bool IsValidPassword(string password)
+		{
+			const int minimumPasswordLength = 8;
+
+			if (string.IsNullOrEmpty(password) || password.Length < minimumPasswordLength)
+			{
+				return false;
+			}
+
+			var hasLetter = false;
+			var hasUppercase = false;
+			var hasLowercase = false;
+			var hasDigit = false;
+			var hasSpecialCharacter = false;
+
+			foreach (var c in password)
+			{
+				if (char.IsUpper(c))
+				{
+					hasUppercase = true;
+					hasLetter = true;
+				}
+				else if (char.IsLower(c))
+				{
+					hasLowercase = true;
+					hasLetter = true;
+				}
+				else if (char.IsDigit(c))
+				{
+					hasDigit = true;
+				}
+				else if (char.IsSymbol(c) || char.IsPunctuation(c))
+				{
+					hasSpecialCharacter = true;
+				}
+			}
+
+			const int requiredCharacterTypes = 2;
+
+			return hasUppercase && hasLowercase && hasDigit && hasSpecialCharacter && (hasLetter ? 1 : 0) + (hasDigit ? 1 : 0) + (hasSpecialCharacter ? 1 : 0) >= requiredCharacterTypes;
+		}
+
+		private static bool IsValidEmail(string email)
+		{
+			const string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+
+			var regex = new Regex(emailPattern);
+
+			return !string.IsNullOrEmpty(email) && regex.IsMatch(email);
 		}
 	}
 }
