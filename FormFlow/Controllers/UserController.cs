@@ -94,6 +94,12 @@ namespace FormFlow.Controllers
 				return BadRequest(ModelState);
 			}
 
+			if (await _userRepository.ExistsByEmailAsync(model.Email))
+			{
+				ModelState.AddModelError("Email", "Email address already used.");
+				return BadRequest(ModelState);
+			}
+
 			var user = new User
 			{
 				Email = model.Email,
@@ -125,7 +131,6 @@ namespace FormFlow.Controllers
 				return false;
 			}
 
-			var hasLetter = false;
 			var hasUppercase = false;
 			var hasLowercase = false;
 			var hasDigit = false;
@@ -136,12 +141,10 @@ namespace FormFlow.Controllers
 				if (char.IsUpper(c))
 				{
 					hasUppercase = true;
-					hasLetter = true;
 				}
 				else if (char.IsLower(c))
 				{
 					hasLowercase = true;
-					hasLetter = true;
 				}
 				else if (char.IsDigit(c))
 				{
@@ -155,7 +158,7 @@ namespace FormFlow.Controllers
 
 			const int requiredCharacterTypes = 2;
 
-			return hasUppercase && hasLowercase && hasDigit && hasSpecialCharacter && (hasLetter ? 1 : 0) + (hasDigit ? 1 : 0) + (hasSpecialCharacter ? 1 : 0) >= requiredCharacterTypes;
+			return (hasLowercase && hasUppercase ? 1 : 0) + (hasDigit ? 1 : 0) + (hasSpecialCharacter ? 1 : 0) >= requiredCharacterTypes;
 		}
 
 		private static bool IsValidEmail(string email)

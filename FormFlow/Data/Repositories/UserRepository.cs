@@ -51,5 +51,12 @@ namespace FormFlow.Data.Repositories
 			var filter = Builders<User>.Filter.Eq("Id", id);
 			await _users.DeleteOneAsync(filter);
 		}
+
+		public async Task<bool> ExistsByEmailAsync(string email)
+		{
+			var filter = Builders<User>.Filter.Eq(u => u.Email, email);
+			var count = await _users.CountDocumentsAsync(filter);
+			return count > 0;
+		}
 	}
 }
