@@ -64,7 +64,7 @@ namespace FormFlow.Controllers
 			return NoContent();
 		}
 		[HttpGet("register")]
-		public IActionResult Register()
+		public IActionResult RegisterAndLogin()
 		{
 			return View();
 		}
@@ -118,6 +118,27 @@ namespace FormFlow.Controllers
 			return RedirectToAction("Index", "Home");
 		}
 
+		[HttpPost("login")]
+		public async Task<IActionResult> Login(UserLoginModel model)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			var user = await _userRepository.GetByEmailAsync(model.Email);
+
+			if (user == null)
+			{
+				ModelState.AddModelError("Email", "Invalid email or password.");
+				return BadRequest(ModelState);
+			}
+
+			if (VerifyPassword(model.Password, user.PasswordHash)) return RedirectToAction("Index", "Home");
+			ModelState.AddModelError("Email", "Invalid email or password.");
+			return BadRequest(ModelState);
+		}
+
 		public string HashPassword(string password)
 		{
 			return BCrypt.Net.BCrypt.HashPassword(password);
@@ -169,6 +190,11 @@ namespace FormFlow.Controllers
 			var regex = new Regex(emailPattern);
 
 			return !string.IsNullOrEmpty(email) && regex.IsMatch(email);
+		}
+
+		private bool VerifyPassword(string password, string passwordHash)
+		{
+			return BCrypt.Net.BCrypt.Verify(password, passwordHash);
 		}
 	}
 }
