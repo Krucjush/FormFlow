@@ -1,9 +1,9 @@
 ﻿@model UserRegistrationModel
 <title>Welcome</title>
-<link href="~/css/register.css" rel="stylesheet" />
+<link href="~/css/registerAndLogin.css" rel="stylesheet" />
 <div class="container" id="container">
 	<div class="form-container sign-up-container">
-		<form id="registrationForm" method="post">
+		<form id="registrationForm" method="post" asp-action="Register">
 			<h1>Create Account</h1>
 			<span>user your email for registration</span>
 			<input type="email" id="email" name="email" placeholder="Email" required />
@@ -13,13 +13,14 @@
 		</form>
 	</div>
 	<div class="form-container sign-in-container">
-		<form action="#">
+		<form id="loginForm" method="post" asp-action="Login">
 			<h1>Sign in</h1>
 			<span>user your account</span>
-			<input type="email" placeholder="Email" />
-			<input type="password" placeholder="Password" />
+			<input type="email" name="email" placeholder="Email" required/>
+			<input type="password" name="password" placeholder="Password" required/>
+			<input type="hidden" name="confirmPassword"/>
 			<a href="#">Forgot your password?</a>
-			<button>Sign In</button>
+			<button type="submit">Sign In</button>
 		</form>
 	</div>
 	<div class="overlay-container">
@@ -37,4 +38,4 @@
 		</div>
 	</div>
 </div>
-<script src="~/js/register.js"></script>
+<script src="~/js/registerAndLogin.js"></script>
