@@ -3,6 +3,7 @@ using AspNetCore.Identity.Mongo.Model;
 using FormFlow.Controllers;
 using FormFlow.Data;
 using FormFlow.Data.Repositories;
+using FormFlow.Interfaces;
 using FormFlow.JWT;
 using FormFlow.Models;
 using Microsoft.AspNetCore.Identity;
@@ -32,6 +33,8 @@ namespace FormFlow
 			builder.Services.AddSingleton<ResponseEntryController>();
 			builder.Services.AddSingleton<FormResponseController>();
 			builder.Services.AddSingleton<JwtSettings>();
+			builder.Services.AddSingleton<IUserRepository, UserRepository>();
+			builder.Services.AddSingleton<IFormRepository, FormRepository>();
 
 			var secretKey = JwtHelper.GenerateSecretKey(64);
 
