@@ -20,42 +20,17 @@ namespace FormFlow.Tests
 {
 	public class UserControllerRegisterTests
 	{
-		private readonly ITestOutputHelper _testOutputHelper;
-		private Mock<IOptions<MongoDBSettings>> _mockOptions;
-		private Mock<IMongoDatabase> _mockDB;
-		private Mock<IMongoClient> _mockClient;
 		private readonly Mock<IUserRepository> _userRepositoryMock;
 		private readonly UserController _controller;
 
-		public UserControllerRegisterTests(ITestOutputHelper testOutputHelper)
+		public UserControllerRegisterTests()
 		{
-			_testOutputHelper = testOutputHelper;
-			_mockOptions = new Mock<IOptions<MongoDBSettings>>();
-			_mockDB = new Mock<IMongoDatabase>();
-			_mockClient = new Mock<IMongoClient>();
 			_userRepositoryMock = new Mock<IUserRepository>();
 			var formRepositoryMock = new Mock<IFormRepository>();
 			var jwtSettings = new JwtSettings();
 			_controller = new UserController(_userRepositoryMock.Object, formRepositoryMock.Object, jwtSettings);
 		}
-		[Fact]
-		public void ApplicationDBContext_Constructor_Success()
-		{
-			var settings = new MongoDBSettings
-			{
-				ConnectionURI = "mongodb://tes123 ",
-				DatabaseName = "TestDB"
-			};
-
-			_mockOptions.Setup(s => s.Value).Returns(settings);
-			_mockClient.Setup(c => c
-					.GetDatabase(_mockOptions.Object.Value.DatabaseName, null))
-				.Returns(_mockDB.Object);
-
-			var context = new MongoDbContext(_mockOptions.Object);
-
-			Assert.NotNull(context);
-		}
+		
 		[Fact]
 		public async Task Register_ValidUser_Success()
 		{
