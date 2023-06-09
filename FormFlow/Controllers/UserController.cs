@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using FormFlow.Interfaces;
 using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using FormFlow.JWT;
@@ -15,11 +16,11 @@ namespace FormFlow.Controllers
 	[Route("[controller]")]
 	public class UserController : Controller
 	{
-		private readonly UserRepository _userRepository;
-		private readonly FormRepository _formRepository;
+		private readonly IUserRepository _userRepository;
+		private readonly IFormRepository _formRepository;
 		private readonly JwtSettings _jwtSettings;
 
-		public UserController(UserRepository userRepository, FormRepository formRepository, JwtSettings jwtSettings)
+		public UserController(IUserRepository userRepository, IFormRepository formRepository, JwtSettings jwtSettings)
 		{
 			_userRepository = userRepository;
 			_formRepository = formRepository;
@@ -158,7 +159,7 @@ namespace FormFlow.Controllers
 
 			const int requiredCharacterTypes = 2;
 
-			return (hasLowercase && hasUppercase ? 1 : 0) + (hasDigit ? 1 : 0) + (hasSpecialCharacter ? 1 : 0) >= requiredCharacterTypes;
+			return (hasLowercase && hasUppercase ? 1 : 0) + (hasDigit || hasSpecialCharacter ? 1 : 0) >= requiredCharacterTypes;
 		}
 
 		private static bool IsValidEmail(string email)

@@ -1,11 +1,12 @@
-﻿using FormFlow.Models;
+﻿using FormFlow.Interfaces;
+using FormFlow.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace FormFlow.Data.Repositories
 {
-	public class FormRepository
+	public class FormRepository : IFormRepository
 	{
 		private readonly IMongoCollection<Form> _forms;
 		private readonly IMongoCollection<FormResponse> _formsResponses;

@@ -1,11 +1,12 @@
-﻿using FormFlow.Models;
+﻿using FormFlow.Interfaces;
+using FormFlow.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace FormFlow.Data.Repositories
 {
-	public class UserRepository
+	public class UserRepository : IUserRepository
 	{
 		private readonly IMongoCollection<User> _users;
 
@@ -21,7 +22,7 @@ namespace FormFlow.Data.Repositories
 			_users = database.GetCollection<User>(mongoDbSettings.Value.Collections["User"]);
 		}
 
-		public virtual async Task CreateAsync(User user)
+		public async Task CreateAsync(User user)
 		{
 			await _users.InsertOneAsync(user);
 		}
