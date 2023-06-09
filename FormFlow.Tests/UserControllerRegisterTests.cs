@@ -23,14 +23,14 @@ namespace FormFlow.Tests
 		private readonly Mock<IUserRepository> _userRepositoryMock;
 		private readonly UserController _controller;
 
-		public UserControllerRegisterTests()
+		public UserControllerRegisterTests(ITestOutputHelper testOutputHelper)
 		{
 			_userRepositoryMock = new Mock<IUserRepository>();
 			var formRepositoryMock = new Mock<IFormRepository>();
 			var jwtSettings = new JwtSettings();
 			_controller = new UserController(_userRepositoryMock.Object, formRepositoryMock.Object, jwtSettings);
 		}
-		
+
 		[Fact]
 		public async Task Register_ValidUser_Success()
 		{
