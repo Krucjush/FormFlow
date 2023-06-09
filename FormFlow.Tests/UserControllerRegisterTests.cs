@@ -30,6 +30,7 @@ namespace FormFlow.Tests
 			var jwtSettings = new JwtSettings();
 			_controller = new UserController(_userRepositoryMock.Object, formRepositoryMock.Object, jwtSettings);
 		}
+
 		[Fact]
 		public async Task Register_ValidUser_Success()
 		{
