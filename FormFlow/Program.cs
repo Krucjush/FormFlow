@@ -35,6 +35,7 @@ namespace FormFlow
 			builder.Services.AddSingleton<JwtSettings>();
 			builder.Services.AddSingleton<IUserRepository, UserRepository>();
 			builder.Services.AddSingleton<IFormRepository, FormRepository>();
+            builder.Services.AddSingleton<JwtHelper>();
 
 			var secretKey = JwtHelper.GenerateSecretKey(64);
 

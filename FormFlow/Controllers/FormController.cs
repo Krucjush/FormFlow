@@ -1,5 +1,7 @@
 ﻿using FormFlow.Data.Repositories;
+using FormFlow.JWT;
 using FormFlow.Models;
+using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FormFlow.Controllers
@@ -9,11 +11,14 @@ namespace FormFlow.Controllers
 	public class FormController : Controller
 	{
 		private readonly FormRepository _formRepository;
+		private readonly JwtHelper _jwtHelper;
 
-		public FormController(FormRepository formRepository)
+		public FormController(FormRepository formRepository, JwtHelper jwtHelper)
 		{
 			_formRepository = formRepository;
-		}
+            _jwtHelper = jwtHelper;
+        }
+		
 
 		[HttpGet]
 		public async Task<List<Form>> Get()
@@ -79,5 +84,35 @@ namespace FormFlow.Controllers
 			await _formRepository.DeleteAsync(id);
 			return NoContent();
 		}
+
+		[HttpGet("create")]
+        // GET: Form/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost("create")]
+		public async Task<IActionResult> Create(FormCreateModel model)
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = _jwtHelper.GetUserIdFromJwt(Request.Headers["Authorization"]!);
+
+            var form = new Form()
+            {
+                Title = model.Title,
+                Questions = model.Questions,
+                Status = model.Status ?? FormStatus.Public,
+                OwnerId = userId
+            };
+            await _formRepository.CreateAsync(form);
+
+            return RedirectToAction("Index", "Home");
+        }
+		
 	}
 }

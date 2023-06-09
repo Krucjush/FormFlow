@@ -1,0 +1,79 @@
+﻿@using FormFlow.Models.Enums
+@model FormFlow.Models.FormCreateModel
+
+<h2>Create Form</h2>
+
+@using (Html.BeginForm("Create", "Form", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Title)
+        @Html.TextBoxFor(model => model.Title, new { @class = "form-control" })
+        @Html.ValidationMessageFor(model => model.Title)
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Questions)
+        <div id="questions-container">
+        @if (Model.Questions != null)
+        {
+            @for (var i = 0; i < Model.Questions.Count; i++)
+            {
+                <div class="question">
+                    @Html.TextBoxFor(model => model.Questions[i].Text, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Questions[i].Text)
+
+                    @Html.DropDownListFor(model => model.Questions[i].Type, new SelectList(Enum.GetValues(typeof(QuestionType))), "Select Type", new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Questions[i].Type)
+
+                    <button type="button" class="btn btn-danger remove-question">Remove</button>
+                </div>
+            }
+        }
+        </div>
+        <button type="button" id="add-question" class="btn btn-primary">Add Question</button>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Status)
+        @Html.DropDownListFor(model => model.Status, new SelectList(Enum.GetValues(typeof(FormStatus))), "Select Status", new { @class = "form-control" })
+        @Html.ValidationMessageFor(model => model.Status)
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Create</button>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            // Add question
+            $('#add-question').click(function () {
+                var questionsContainer = $('#questions-container');
+                var index = questionsContainer.children('.question').length;
+
+                var questionHtml = '<div class="question">' +
+                    '<input type="text" class="form-control" name="Questions[' + index + '].Text" />' +
+                    '<span class="field-validation-valid text-danger" data-valmsg-for="Questions[' + index + '].Text" data-valmsg-replace="true"></span>' +
+                    '<select class="form-control" name="Questions[' + index + '].Type">' +
+                    '@foreach (var type in Enum.GetValues(typeof(QuestionType)))' +
+                    '{' +
+                    '<option value="@type">@type</option>' +
+                    '}' +
+                    '</select>' +
+                    '<span class="field-validation-valid text-danger" data-valmsg-for="Questions[' + index + '].Type" data-valmsg-replace="true"></span>' +
+                    '<button type="button" class="btn btn-danger remove-question">Remove</button>' +
+                    '</div>';
+
+                questionsContainer.append(questionHtml);
+            });
+
+            // Remove question
+            $(document).on('click', '.remove-question', function () {
+                $(this).closest('.question').remove();
+            });
+        });
+    </script>
+}

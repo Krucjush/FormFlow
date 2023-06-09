@@ -39,5 +39,20 @@ namespace FormFlow.JWT
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+        public string GetUserIdFromJwt(string jwtToken)
+        {
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var token = jwtHandler.ReadJwtToken(jwtToken);
+
+            
+            var userIdClaim = token.Claims.FirstOrDefault(claim => claim.Type == "userId");
+
+            if (userIdClaim != null)
+            {
+                return userIdClaim.Value;
+            }
+
+            return null;
+        }
     }
 }
