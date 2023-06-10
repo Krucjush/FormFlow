@@ -133,7 +133,6 @@ namespace FormFlow.Controllers
 				ModelState.AddModelError("Email", "Invalid email or password.");
 				return BadRequest(ModelState);
 			}
-
 			if (VerifyPassword(model.Password, user.PasswordHash)) return RedirectToAction("Index", "Home");
 			ModelState.AddModelError("Email", "Invalid email or password.");
 			return BadRequest(ModelState);

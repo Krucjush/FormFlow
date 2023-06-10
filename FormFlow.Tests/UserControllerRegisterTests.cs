@@ -65,6 +65,7 @@ namespace FormFlow.Tests
 
 			Assert.NotNull(createdUser);
 			Assert.Equal(model.Email, createdUser.Email);
+			Assert.True(BCrypt.Net.BCrypt.Verify(model.Password, createdUser.PasswordHash));
 		}
 
 		[Fact]
