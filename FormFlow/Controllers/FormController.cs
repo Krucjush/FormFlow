@@ -89,7 +89,8 @@ namespace FormFlow.Controllers
         // GET: Form/Create
         public IActionResult Create()
         {
-            return View();
+            var model = new FormCreateModel();
+            return View(model);
         }
 
         [HttpPost("create")]
