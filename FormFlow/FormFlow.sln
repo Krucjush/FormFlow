@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FormFlow", "FormFlow.csproj", "{F09F4B2E-B341-464D-88F5-77B242B7B745}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FormFlow", "FormFlow.csproj", "{F09F4B2E-B341-464D-88F5-77B242B7B745}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FormFlow.Tests", "..\FormFlow.Tests\FormFlow.Tests.csproj", "{55EB3A05-CC24-4F93-8C29-D47BE9AFF24E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{F09F4B2E-B341-464D-88F5-77B242B7B745}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F09F4B2E-B341-464D-88F5-77B242B7B745}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F09F4B2E-B341-464D-88F5-77B242B7B745}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55EB3A05-CC24-4F93-8C29-D47BE9AFF24E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55EB3A05-CC24-4F93-8C29-D47BE9AFF24E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55EB3A05-CC24-4F93-8C29-D47BE9AFF24E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55EB3A05-CC24-4F93-8C29-D47BE9AFF24E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

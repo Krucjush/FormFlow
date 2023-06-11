@@ -7,7 +7,7 @@ namespace FormFlow.Models
     {
         public int Id { get; set; }
         [Required(ErrorMessage = "FormId is required.")]
-        public string FormId { get; set; }
+        public int FormId { get; set; }
         [Required(ErrorMessage = "Text is required.")]
         public string Text { get; set; }
         [Required(ErrorMessage = "Type is required.")]
