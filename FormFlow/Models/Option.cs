@@ -1,4 +1,4 @@
-﻿namespace FormFlow.Models.Enums
+﻿namespace FormFlow.Models
 {
     public class Option
     {
