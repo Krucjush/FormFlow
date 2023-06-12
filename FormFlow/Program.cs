@@ -1,88 +1,55 @@
-using AspNetCore.Identity.Mongo;
-using AspNetCore.Identity.Mongo.Model;
-using FormFlow.Controllers;
 using FormFlow.Data;
-using FormFlow.Data.Repositories;
-using FormFlow.Interfaces;
-using FormFlow.JWT;
-using FormFlow.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Driver;
-using Microsoft.Extensions.Options;
 
 namespace FormFlow
 {
-	public class Program
-	{
-		public static void Main(string[] args)
-		{
-			var builder = WebApplication.CreateBuilder(args);
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-			builder.Services.AddRazorPages();
-			builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDB"));
-			builder.Services.AddSingleton<UserRepository>();
-			builder.Services.AddSingleton<FormRepository>();
-			builder.Services.AddSingleton<FormResponseRepository>();
-			builder.Services.AddSingleton<QuestionRepository>();
-			builder.Services.AddSingleton<ResponseEntryRepository>();
-			builder.Services.AddSingleton<UserController>();
-			builder.Services.AddSingleton<FormController>();
-			builder.Services.AddSingleton<QuestionController>();
-			builder.Services.AddSingleton<ResponseEntryController>();
-			builder.Services.AddSingleton<FormResponseController>();
-			builder.Services.AddSingleton<JwtSettings>();
-			builder.Services.AddSingleton<IUserRepository, UserRepository>();
-			builder.Services.AddSingleton<IFormRepository, FormRepository>();
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+            builder.Services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlite(builder.Configuration.GetConnectionString("Default"));
+            });
 
-			var secretKey = JwtHelper.GenerateSecretKey(64);
+            builder.Services.AddDbContext<AppStoreContext>(options =>
+            {
+                options.UseSqlite(builder.Configuration.GetConnectionString("Identity"));
+            });
 
-			builder.Services.Configure<JwtSettings>(x =>
-			{
-				x.SecretKey = secretKey;
-			});
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<AppStoreContext>()
+                .AddDefaultTokenProviders().AddDefaultUI();
 
-			builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            builder.Services.AddRazorPages();
 
-			// Add services to the container.
-			var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-			builder.Services.AddDbContext<ApplicationDbContext>(options =>
-				options.UseSqlServer(connectionString));
-			builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+            var app = builder.Build();
 
-			builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-				.AddEntityFrameworkStores<ApplicationDbContext>();
-			builder.Services.AddControllersWithViews();
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
 
-			var app = builder.Build();
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
-			// Configure the HTTP request pipeline.
-			if (app.Environment.IsDevelopment())
-			{
-				app.UseMigrationsEndPoint();
-			}
-			else
-			{
-				app.UseExceptionHandler("/Home/Error");
-				// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-				app.UseHsts();
-			}
+            app.UseRouting();
 
-			app.UseHttpsRedirection();
-			app.UseStaticFiles();
+            app.UseAuthorization();
 
-			app.UseRouting();
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
-			app.UseAuthorization();
-
-			app.MapControllerRoute(
-				name: "default",
-				pattern: "{controller=Home}/{action=Index}/{id?}");
-
-			app.MapRazorPages();
-
-			app.Run();
-		}
-	}
+            app.MapRazorPages();
+            app.Run();
+        }
+    }
 }
