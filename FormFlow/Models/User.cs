@@ -2,11 +2,12 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using FormFlow.Models.Enums;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace FormFlow.Models
 {
-    public class User
+    public class User : IdentityUser
     {
         public int Id { get; set; }
         [Required(ErrorMessage = "Email is required.")]
