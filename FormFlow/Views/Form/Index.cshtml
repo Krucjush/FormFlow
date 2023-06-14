@@ -1,0 +1,35 @@
+﻿@model FormViewModel
+
+<form method="post" class="mt-4">
+	<div class="row mt-5">
+		<div class="col-12">
+			<p class="fs-3">Your Forms</p>
+			<hr/>
+		</div>
+	</div>
+	@if (!Model.ListForms.Any())
+	{
+		<div class="row">
+			<div class="col-6">
+				<h4><strong>You don't have any forms created!</strong></h4>
+			</div>
+		</div>
+	}
+	else
+	{
+		@foreach (var form in Model.ListForms)
+		{
+			<div class="row">
+				<div class="col-6">
+					<h4><strong>@form.Title</strong></h4>
+				</div>
+				<div class="col-4 my-auto text-center">
+					<a asp-action="Modify" asp-route-formId="@form.Id" class="btn btn-warning">Modify</a>
+					<a asp-action="Remove" asp-route-formId="@form.Id" class="btn btn-warning">Remove</a>
+				</div>
+			</div>
+			<hr />
+		}
+	}
+	<a asp-controller="Form" asp-action="Create" class="btn btn-success float-end">Add new form</a>
+</form>

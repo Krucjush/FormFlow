@@ -3,6 +3,7 @@ using System;
 using FormFlow.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FormFlow.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230614195335_InitialCreate1")]
+    partial class InitialCreate1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
@@ -26,6 +29,9 @@ namespace FormFlow.Migrations
                     b.Property<string>("OwnerId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("QuestionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
@@ -37,6 +43,8 @@ namespace FormFlow.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
 
                     b.HasIndex("UserId");
 
@@ -98,8 +106,6 @@ namespace FormFlow.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FormId");
 
                     b.ToTable("Questions");
                 });
@@ -218,9 +224,15 @@ namespace FormFlow.Migrations
 
             modelBuilder.Entity("FormFlow.Models.Form", b =>
                 {
+                    b.HasOne("FormFlow.Models.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId");
+
                     b.HasOne("FormFlow.Models.User", null)
                         .WithMany("Forms")
                         .HasForeignKey("UserId");
+
+                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("FormFlow.Models.Option", b =>
@@ -228,15 +240,6 @@ namespace FormFlow.Migrations
                     b.HasOne("FormFlow.Models.Question", null)
                         .WithMany("Options")
                         .HasForeignKey("QuestionId");
-                });
-
-            modelBuilder.Entity("FormFlow.Models.Question", b =>
-                {
-                    b.HasOne("FormFlow.Models.Form", null)
-                        .WithMany("Questions")
-                        .HasForeignKey("FormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("FormFlow.Models.ResponseEntry", b =>
@@ -263,11 +266,6 @@ namespace FormFlow.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("FormFlow.Models.Form", b =>
-                {
-                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("FormFlow.Models.FormResponse", b =>
