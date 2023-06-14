@@ -1,6 +1,8 @@
 ﻿using FormFlow.Attributes;
 using FormFlow.Models.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace FormFlow.Models
 {
@@ -9,9 +11,8 @@ namespace FormFlow.Models
 		public int Id { get; set; }
 		[Required(ErrorMessage = "Title is required.")]
 		public string Title { get; set; }
-		[AtLeastOneQuestion(ErrorMessage = "At least one question is required.")]
-		public List<Question> Questions { get; set; }
+		public List<Question>? Questions { get; set; }
 		public FormStatus Status { get; set; } = FormStatus.Public;
-		public string OwnerId { get; set; }
+		public string? OwnerId { get; set; }
 	}
 }
