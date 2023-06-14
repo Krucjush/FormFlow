@@ -17,13 +17,15 @@ namespace FormFlow
                 options.UseSqlite(builder.Configuration.GetConnectionString("Default"));
             });
 
+            builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<AppStoreContext>();
+
             builder.Services.AddDbContext<AppStoreContext>(options =>
             {
                 options.UseSqlite(builder.Configuration.GetConnectionString("Identity"));
             });
 
-            builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<AppStoreContext>()
-                .AddDefaultTokenProviders().AddDefaultUI();
+            //builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<AppStoreContext>()
+            //    .AddDefaultTokenProviders().AddDefaultUI();
 
             builder.Services.AddRazorPages();
 

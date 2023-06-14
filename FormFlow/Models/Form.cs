@@ -12,6 +12,6 @@ namespace FormFlow.Models
         [AtLeastOneQuestion(ErrorMessage = "At least one question is required.")]
         public List<Question> Questions { get; set; }
         public FormStatus Status { get; set; } = FormStatus.Public;
-        public int? OwnerId { get; set; }
+        public int OwnerId { get; set; }
     }
 }

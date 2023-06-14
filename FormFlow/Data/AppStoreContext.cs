@@ -7,6 +7,7 @@ namespace FormFlow.Data
 {
     public class AppStoreContext : IdentityDbContext<IdentityUser>
     {
+        public DbSet<User> Users { get; set; }
         public AppStoreContext(DbContextOptions<AppStoreContext> options) : base(options)
         {
             

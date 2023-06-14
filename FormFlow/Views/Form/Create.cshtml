@@ -1,77 +1,51 @@
-﻿@using FormFlow.Models.Enums
-@model FormFlow.ViewModels.FormViewModel
-
+﻿@using Microsoft.AspNetCore.Identity
+@model FormFlow.Models.Form
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
 <h2>Create Form</h2>
-
-@using (Html.BeginForm("Create", "Form", FormMethod.Post))
-{
+<form action="/Form/Create" method="post">
 	<div class="form-group">
-		@Html.LabelFor(m => m.Title)
-		@Html.TextBoxFor(m => m.Title, new { @class = "form-control" })
-		@Html.ValidationMessageFor(m => m.Title)
+		<label for="Title">Title</label>
+		<input class="form-control" type="text" id="Title" name="Title" />
 	</div>
-
 	<div class="form-group">
 		<h4>Questions</h4>
 		<div id="questions-container">
 			@for (var i = 0; i < Model.Questions.Count; i++)
 			{
 				<div class="question-group">
-					<h5>Question @(i + 1)</h5>
-					@Html.HiddenFor(m => m.Questions[i].Id)
-
+					<h5>Question ${currentQuestionIndex + 1}</h5>
 					<div class="form-group">
-						@Html.LabelFor(m => m.Questions[i].Text)
-						@Html.TextBoxFor(m => m.Questions[i].Text, new { @class = "form-control" })
-						@Html.ValidationMessageFor(m => m.Questions[i].Text)
-					</div>
-
-					<div class="form-group">
-						@Html.LabelFor(m => m.Questions[i].Type)
-						@Html.DropDownListFor(m => m.Questions[i].Type, new SelectList(Enum.GetValues(typeof(QuestionType))), new { @class = "form-control" })
-						@Html.ValidationMessageFor(m => m.Questions[i].Type)
-					</div>
-
-					<div class="form-group answer-container" id="answer-container-@(i)">
-						<label for="Questions_@(i)__Answer">Answer</label>
-						@if (Model.Questions[i].Answers != null)
-						{
-							for (var j = 0; j < Model.Questions[i].Answers!.Count; j++)
-							{
-								<input class="form-control" type="text" id="Questions_@(i)__Answer_@(j)" name="Questions[@(i)].Answers[@(j)]" value="@Model.Questions[i].Answers[j]" />
-							}
-						}
-						<button type="button" class="btn btn-secondary add-answer-btn" data-question-index="@i">Add Another Answer</button>
+						<label for="Questions_${currentQuestionIndex}__Text">Text</label>
+						<input class="form-control" type="text" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text" />
 					</div>
 				</div>
 			}
 		</div>
-		@Html.ValidationMessageFor(m => m.Questions)
 	</div>
 
 	<div class="form-group">
 		<h4>Status</h4>
 		<div class="radio">
 			<label>
-				@Html.RadioButtonFor(m => m.Status, FormStatus.Public) Public
+				<input type="radio" name="Status" value="Public" /> Public
 			</label>
 		</div>
 		<div class="radio">
 			<label>
-				@Html.RadioButtonFor(m => m.Status, FormStatus.Private) Private
+				<input type="radio" name="Status" value="Private" /> Private
 			</label>
 		</div>
 		<div class="radio">
 			<label>
-				@Html.RadioButtonFor(m => m.Status, FormStatus.Domain) Domain
+				<input type="radio" name="Status" value="Domain" /> Domain
 			</label>
 		</div>
-		@Html.ValidationMessageFor(m => m.Status)
 	</div>
 
 	<button type="button" id="add-question-btn" class="btn btn-primary">Add Question</button>
 	<button type="submit" class="btn btn-primary">Create</button>
-}
+</form>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -102,23 +76,21 @@
 
 				if (questionType === "mark") {
 					var questionHtml = `
-									<div class="question-group">
-										<h5>Question ${currentQuestionIndex + 1}</h5>
-										<input type="hidden" name="Questions[${currentQuestionIndex}].Id" value="" />
-										<div class="form-group">
-											<label for="Questions_${currentQuestionIndex}__Text">Text</label>
-											<input class="form-control" type="text" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text" />
-										</div>
-									</div>`;
+								<div class="question-group">
+									<h5>Question ${currentQuestionIndex + 1}</h5>
+									<div class="form-group">
+										<label for="Questions_${currentQuestionIndex}__Text">Text</label>
+										<input class="form-control" type="text" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text" />
+									</div>
+								</div>`;
 					$("#questions-container").append(questionHtml);
 				} else if (questionType === "multipleoptions") {
 					var questionHtml = `
-							<div class="question-group">
-								<h5>Question ${currentQuestionIndex + 1}</h5>
-								<input type="hidden" name="Questions[${currentQuestionIndex}].Id" value="" />
-								<div class="form-group">
-									<label for="Questions_${currentQuestionIndex}__Text">Text</label>
-									<textarea class="form-control" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text"></textarea>
+								<div class="question-group">
+									<h5>Question ${currentQuestionIndex + 1}</h5>
+									<div class="form-group">
+										<label for="Questions_${currentQuestionIndex}__Text">Text</label>
+										<textarea class="form-control" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text"></textarea>
 								</div>
 								<div class="form-group answer-container" id="answer-container-${currentQuestionIndex}">
 									<label for="Questions_${currentQuestionIndex}__Answer_${currentAnswerIndex}">Answer</label>
@@ -144,14 +116,13 @@
 					});
 				} else if (questionType === "open") {
 					var questionHtml = `
-									<div class="question-group">
-										<h5>Question ${currentQuestionIndex + 1}</h5>
-										<input type="hidden" name="Questions[${currentQuestionIndex}].Id" value="" />
-										<div class="form-group">
-											<label for="Questions_${currentQuestionIndex}__Text">Text</label>
-											<input class="form-control" type="text" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text" />
-										</div>
-									</div>`;
+							<div class="question-group">
+								<h5>Question ${currentQuestionIndex + 1}</h5>
+								<div class="form-group">
+									<label for="Questions_${currentQuestionIndex}__Text">Text</label>
+									<input class="form-control" type="text" id="Questions_${currentQuestionIndex}__Text" name="Questions[${currentQuestionIndex}].Text" />
+								</div>
+							</div>`;
 					$("#questions-container").append(questionHtml);
 				}
 

@@ -1,34 +1,50 @@
 ﻿using System.Security.Claims;
 using FormFlow.Data;
 using FormFlow.Models;
-using FormFlow.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.EntityFrameworkCore;
 
 namespace FormFlow.Controllers
 {
     public class FormController : Controller
     {
         private readonly AppDbContext _dbContext;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public FormController(AppDbContext dbContext)
+		public FormController(AppDbContext dbContext, UserManager<IdentityUser> userManager)
         {
             _dbContext = dbContext;
+            _userManager = userManager;
         }
         [HttpGet]
         public IActionResult Create()
         {
-            var model = new FormViewModel
+            var model = new Form
             {
-                Questions = new List<QuestionViewModel>()
+                Questions = new List<Question>()
             };
             return View(model);
         }
         [HttpPost]
-        public IActionResult Create(FormViewModel model)
+        public async Task<IActionResult> Create(Form model)
         {
+            var identityUser = await _userManager.GetUserAsync(User);
+            var user = _dbContext.Users.FirstOrDefaultAsync(u => u.Email == identityUser!.Email);
+            model.OwnerId = user.Id;
             if (!ModelState.IsValid)
             {
-                return View(model);
+	            foreach (var (propertyName, value) in ModelState)
+	            {
+		            var errorMessages = value.Errors.Select(e => e.ErrorMessage); // List of error messages
+
+		            foreach (var errorMessage in errorMessages)
+		            {
+			            Console.WriteLine($"Validation error: {propertyName} - {errorMessage}");
+		            }
+	            }
+				return View(model);
             }
 
             var questions = model.Questions.Select(q => new Question
@@ -42,8 +58,7 @@ namespace FormFlow.Controllers
             {
                 Title = model.Title,
                 Questions = questions,
-                Status = model.Status,
-                OwnerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))
+                Status = model.Status
             };
 
             foreach (var question in form.Questions)
@@ -52,7 +67,7 @@ namespace FormFlow.Controllers
             }
 
             _dbContext.Forms.Add(form);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
 
             return RedirectToAction("Index", "Home");
         }

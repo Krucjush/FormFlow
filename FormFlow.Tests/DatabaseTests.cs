@@ -139,8 +139,7 @@ namespace FormFlow.Tests
             {
                 // No title
                 Questions = new List<Question>(),
-                Status = FormStatus.Public,
-                OwnerId = null
+                Status = FormStatus.Public
             };
 
 
