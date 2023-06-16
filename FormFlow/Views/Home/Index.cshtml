@@ -1,8 +1,21 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+	ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@model IEnumerable<Form>
+
+<form method="post" class="mt-4">
+	@foreach (var form in Model)
+	{
+		<div class="row">
+			<div class="col-6">
+				<h4><strong>@form.Title</strong></h4>
+			</div>
+			<div class="col-4 my-auto text-center">
+				<a asp-controller="Form"  asp-action="Display" asp-route-formId="@form.Id" class="btn btn-warning">Modify</a>
+			</div>
+		</div>
+		<hr />
+	}
+	<a asp-controller="Form" asp-action="Create" class="btn btn-success float-end">Add new form</a>
+</form>

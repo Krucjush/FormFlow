@@ -1,4 +1,5 @@
-﻿@model FormViewModel
+﻿@using FormFlow.Models.Enums
+@model FormViewModel
 
 @{
 	ViewData["Title"] = "Create Form";
@@ -12,56 +13,202 @@
 			<h4>Create:</h4>
 			<div class="mb-3">
 				<label asp-for="Form.Title">Title</label>
-				<input asp-for="Form.Title" class="form-control" />
+				<input required="true" asp-for="Form.Title" class="form-control" />
 				<span asp-validation-for="Form.Title" class="text-danger"></span>
 			</div>
 			<h4>Questions:</h4>
-			<div class="mb-3">
+			<div id="questionContainer" class="mb-3">
 				@for (var i = 0; i < Model.Questions.Count; i++)
 				{
-					<div class="mb-3">
-						<label asp-for="Questions[i].Text">Question @(i + 1)</label>
+					<div class="question-group mb-3">
+						<div class="d-flex">
+							<label asp-for="Questions[i].Text" class="flex-grow-1">Question @(i + 1)</label>
+							<button type="button" class="btn btn-danger btn-remove-question">Remove</button>
+						</div>
 						<input asp-for="Questions[i].Text" class="form-control" />
 						<span asp-validation-for="Questions[i].Text" class="text-danger"></span>
 					</div>
 				}
 				<button type="button" id="addQuestionBtn" class="btn btn-primary">Add Question</button>
 			</div>
+			<h4>Status:</h4>
+			<div id="statusContainer" class="mb-3">
+				@foreach (FormStatus status in Enum.GetValues(typeof(FormStatus)))
+				{
+					<div class="status-group mb-3">
+						<input class="form-check-input" type="radio" name="Status" value="@status" id="status_@(status)" @(status == FormStatus.Public ? "checked" : "") />
+						<label class="form-check-label" for="status_@(status)">
+							@status
+						</label>
+					</div>
+				}
+			</div>
 		</div>
 	</div>
-    <button type="submit" class="btn btn-success float-end">Create</button>
+	<button type="submit" class="btn btn-success float-end">Create</button>
 </form>
+
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-HA7Atf+7H3j5Bk4qcbmu3Nlw2M9HTF30V0GzYFGi+1bD3xORrA1XUap+oAxRs1Hs" crossorigin="anonymous"></script>
 @section Scripts {
 	<script>
-        $(document).ready(function () {
-            var questionIndex = @Model.Questions.Count;
-            var addQuestionBtn = $("#addQuestionBtn");
-            
-            addQuestionBtn.click(function () {
-                var questionGroup = $("<div>")
-                    .addClass("question-group mb-3");
-                var label = $("<label>")
-                    .attr("for", "Form_Questions_" + questionIndex + "__Text")
-                    .text("Question " + (questionIndex + 1));
-                var input = $("<input>")
-                    .attr("type", "text")
-                    .attr("name", "Form.Questions[" + questionIndex + "].Text")
-                    .attr("id", "Form_Questions_" + questionIndex + "__Text")
-                    .addClass("form-control");
-                var validationMessage = $("<span>")
-                    .addClass("text-danger")
-                    .attr("data-valmsg-for", "Form.Questions[" + questionIndex + "].Text");
+		$(document).ready(function () {
+			var questionIndex = @Model.Questions.Count;
+			var addQuestionBtn = $("#addQuestionBtn");
 
-                questionGroup.append(label);
-                questionGroup.append(input);
-                questionGroup.append(validationMessage);
+			addQuestionBtn.click(function () {
+				var questionGroup = $("<div>")
+					.addClass("question-group mb-3");
+				var label = $("<label>")
+					.attr("for", "Form_Questions_" + questionIndex + "__Text")
+					.text("Question " + (questionIndex + 1));
 
-                questionGroup.insertBefore(addQuestionBtn);
+				var input = $("<input>")
+					.attr("type", "text")
+					.attr("name", "Form.Questions[" + questionIndex + "].Text")
+					.attr("id", "Form_Questions_" + questionIndex + "__Text")
+					.addClass("form-control")
+					.hide();
 
-                questionIndex++;
-            });
-        });
-    </script>
+				var validationMessage = $("<span>")
+					.addClass("text-danger")
+					.attr("data-valmsg-for", "Form.Questions[" + questionIndex + "].Text");
+
+				questionGroup.append(label);
+				questionGroup.append(input);
+				questionGroup.append(validationMessage);
+
+				// Add buttons for QuestionType
+				var questionTypeButtons = $("<div>")
+					.addClass("question-type-buttons");
+				var questionTypeLabel = $("<label>")
+					.text("Question Type:");
+				questionTypeButtons.append(questionTypeLabel);
+
+				var questionTypeValues = @Html.Raw(Json.Serialize(Enum.GetNames(typeof(QuestionType))));
+				for (var i = 0; i < questionTypeValues.length; i++) {
+					var questionType = questionTypeValues[i];
+					var questionTypeButton = $("<button>")
+						.attr("type", "button")
+						.attr("name", "Form.Questions[" + questionIndex + "].Type")
+						.attr("value", questionType)
+						.text(questionType)
+						.addClass("btn btn-primary question-type-btn")
+						.click(function () {
+							var selectedQuestionType = $(this).val();
+
+							// Show corresponding input field based on the selected question type
+							if (selectedQuestionType === "Mark") {
+								$(this).closest(".question-group").find("input").show();
+								$(this).closest(".question-group").find(".options-container").remove();
+							} else if (selectedQuestionType === "MultipleOptions") {
+								$(this).closest(".question-group").find("input").show();
+								$(this).closest(".question-group").find(".options-container").remove();
+								var optionsContainer = createOptionsContainer(questionIndex);
+								$(this).closest(".question-group").append(optionsContainer);
+							} else if (selectedQuestionType === "Open") {
+								$(this).closest(".question-group").find("input").show().addClass("large-input");
+								$(this).closest(".question-group").find(".options-container").remove();
+							}
+
+							$(this).closest(".question-group").find(".question-type-buttons").remove();
+						});
+
+					questionTypeButtons.append(questionTypeButton);
+				}
+
+				questionGroup.append(questionTypeButtons);
+
+				questionGroup.insertBefore(addQuestionBtn);
+
+				questionIndex++;
+			});
+
+			$(document).on("click", ".remove-question-btn", function () {
+				$(this).closest(".question-group").remove();
+				updateQuestionIndexes();
+			});
+
+			$(document).on("click", ".remove-option-btn", function () {
+				$(this).closest(".option-group").remove();
+				updateOptionIndexes($(this).closest(".options-container"));
+			});
+		});
+
+		function createOptionsContainer(questionIndex) {
+			var optionsContainer = $("<div>")
+				.addClass("options-container");
+
+			var addOptionBtn = $("<button>")
+				.attr("type", "button")
+				.addClass("btn btn-primary add-option-btn")
+				.text("Add Option");
+
+			addOptionBtn.click(function () {
+				var optionsCount = $(this).closest(".options-container").find(".option-group").length;
+				var newOptionIndex = optionsCount;
+
+				var newOptionLabel = $("<label>")
+					.attr("for", "Form_Questions_" + questionIndex + "__Options_" + newOptionIndex + "__Text")
+					.text("Option " + (newOptionIndex + 1));
+
+				var newOptionInput = $("<input>")
+					.attr("type", "text")
+					.attr("name", "Form.Questions[" + questionIndex + "].Options[" + newOptionIndex + "].Text")
+					.attr("id", "Form_Questions_" + questionIndex + "__Options_" + newOptionIndex + "__Text")
+					.addClass("form-control");
+
+				var newRemoveOptionBtn = $("<button>")
+					.attr("type", "button")
+					.addClass("btn btn-danger remove-option-btn")
+					.text("Remove Option")
+					.click(function () {
+						$(this).closest(".option-group").remove();
+						updateOptionIndexes($(this).closest(".options-container"));
+					});
+
+				var newOptionGroup = $("<div>")
+					.addClass("option-group mb-3");
+				newOptionGroup.append(newOptionLabel);
+				newOptionGroup.append(newOptionInput);
+				newOptionGroup.append(newRemoveOptionBtn);
+
+				$(this).closest(".options-container").append(newOptionGroup);
+				updateOptionIndexes($(this).closest(".options-container"));
+			});
+
+			optionsContainer.append(addOptionBtn);
+
+			return optionsContainer;
+		}
+
+		function updateQuestionIndexes() {
+			$(".question-group").each(function (index) {
+				var questionIndex = index;
+				$(this).find("label").text("Question " + (questionIndex + 1));
+				$(this).find("input")
+					.attr("name", "Form.Questions[" + questionIndex + "].Text")
+					.attr("id", "Form_Questions_" + questionIndex + "__Text");
+			});
+		}
+
+		function updateOptionIndexes(optionsContainer) {
+			var questionGroup = optionsContainer.closest(".question-group");
+			var questionIndex = $(".question-group").index(questionGroup);
+
+			optionsContainer.find(".option-group").each(function (index) {
+				var optionGroup = $(this);
+				var optionIndex = index;
+				optionGroup.find("label").text("Option " + (optionIndex + 1));
+				optionGroup.find("input")
+					.attr("name", "Form.Questions[" + questionIndex + "].Options[" + optionIndex + "].Text")
+					.attr("id", "Form_Questions_" + questionIndex + "__Options_" + optionIndex + "__Text");
+
+				optionGroup.find(".remove-option-btn").off("click").on("click", function () {
+					optionGroup.remove();
+					updateOptionIndexes(optionsContainer);
+				});
+			});
+		}
+	</script>
 }

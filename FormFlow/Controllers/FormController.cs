@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using FormFlow.Data;
 using FormFlow.Models;
+using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.VisualBasic;
@@ -36,6 +37,11 @@ namespace FormFlow.Controllers
 			return View(FormViewModel);
 		}
 		[HttpGet]
+		public IActionResult Display()
+		{
+			return View();
+		}
+		[HttpGet]
 		public IActionResult Create()
 		{
 			var claims = User.Identity as ClaimsIdentity;
@@ -50,14 +56,15 @@ namespace FormFlow.Controllers
 				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value),
 				Form = new Form(),
 				Question = new Question(),
-				Questions = new List<Question>()
+				Questions = new List<Question>(),
+				Status = FormStatus.Public
 			};
 
 			return View(FormViewModel);
 		}
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult Create(FormViewModel formViewModel)
+		public IActionResult Create(FormViewModel formViewModel, string status)
 		{
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
@@ -66,19 +73,24 @@ namespace FormFlow.Controllers
 				return Unauthorized();
 			}
 
-			FormViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
+			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 
-			FormViewModel.Form.OwnerId = idClaim.Value;
+			formViewModel.Form.OwnerId = idClaim.Value;
+            formViewModel.Form.Status = Enum.Parse<FormStatus>(status);
 
-			var questions = FormViewModel.ListForms.SelectMany(form => form.Questions).ToList();
+			var questions = formViewModel.ListForms.SelectMany(form => form.Questions!).ToList();
 
 			var formDetails = new Form
 			{
-				Title = FormViewModel.Form.Title,
-				Status = FormViewModel.Form.Status,
+				Title = formViewModel.Form.Title,
 				Questions = questions,
-				OwnerId = FormViewModel.Form.OwnerId
+                Status = formViewModel.Form.Status,
+                OwnerId = formViewModel.Form.OwnerId
 			};
+            foreach (var question in questions)
+            {
+                _dbContext.Questions.Add(question);
+            }
 			_dbContext.Forms.Add(formDetails);
 			_dbContext.SaveChanges();
 
