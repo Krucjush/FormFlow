@@ -59,9 +59,24 @@
 			addQuestionBtn.click(function () {
 				var questionGroup = $("<div>")
 					.addClass("question-group mb-3");
-				var label = $("<label>")
-					.attr("for", "Form_Questions_" + questionIndex + "__Text")
+
+				var questionIndexLabel = $("<label>")
+					.addClass("flex-grow-1")
 					.text("Question " + (questionIndex + 1));
+
+				var removeQuestionBtn = $("<button>")
+					.attr("type", "button")
+					.addClass("btn btn-danger btn-remove-question")
+					.text("Remove")
+					.click(function () {
+						$(this).closest(".question-group").remove();
+						updateQuestionIndexes();
+					});
+
+				var questionHeader = $("<div>")
+					.addClass("d-flex")
+					.append(questionIndexLabel)
+					.append(removeQuestionBtn);
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -74,16 +89,13 @@
 					.addClass("text-danger")
 					.attr("data-valmsg-for", "Form.Questions[" + questionIndex + "].Text");
 
-				questionGroup.append(label);
+				questionGroup.append(questionHeader);
 				questionGroup.append(input);
 				questionGroup.append(validationMessage);
 
 				// Add buttons for QuestionType
 				var questionTypeButtons = $("<div>")
 					.addClass("question-type-buttons");
-				var questionTypeLabel = $("<label>")
-					.text("Question Type:");
-				questionTypeButtons.append(questionTypeLabel);
 
 				var questionTypeValues = @Html.Raw(Json.Serialize(Enum.GetNames(typeof(QuestionType))));
 				for (var i = 0; i < questionTypeValues.length; i++) {
@@ -120,11 +132,12 @@
 				questionGroup.append(questionTypeButtons);
 
 				questionGroup.insertBefore(addQuestionBtn);
+				updateQuestionIndexes();
 
 				questionIndex++;
 			});
 
-			$(document).on("click", ".remove-question-btn", function () {
+			$(document).on("click", ".btn-remove-question", function () {
 				$(this).closest(".question-group").remove();
 				updateQuestionIndexes();
 			});
@@ -164,7 +177,7 @@
 					.text("Remove Option")
 					.click(function () {
 						$(this).closest(".option-group").remove();
-						updateOptionIndexes($(this).closest(".options-container"));
+						updateOptionIndexes($(this).closest(".options-container"), questionIndex);
 					});
 
 				var newOptionGroup = $("<div>")
@@ -174,7 +187,7 @@
 				newOptionGroup.append(newRemoveOptionBtn);
 
 				$(this).closest(".options-container").append(newOptionGroup);
-				updateOptionIndexes($(this).closest(".options-container"));
+				updateOptionIndexes($(this).closest(".options-container"), questionIndex);
 			});
 
 			optionsContainer.append(addOptionBtn);
@@ -183,19 +196,32 @@
 		}
 
 		function updateQuestionIndexes() {
-			$(".question-group").each(function (index) {
-				var questionIndex = index;
-				$(this).find("label").text("Question " + (questionIndex + 1));
-				$(this).find("input")
-					.attr("name", "Form.Questions[" + questionIndex + "].Text")
-					.attr("id", "Form_Questions_" + questionIndex + "__Text");
+			$(".question-group").each(function (questionIndex) {
+				var questionGroup = $(this);
+
+				// Update label text
+				questionGroup.find("label").text("Question " + (questionIndex + 1));
+
+				// Update input name and ID attributes
+				questionGroup.find("input")
+					.attr("name", "Questions[" + questionIndex + "].Text")
+					.attr("id", "Questions_" + questionIndex + "__Text");
+
+				// Update validation message data-valmsg-for attribute
+				questionGroup.find("span[data-valmsg-for^='Questions']")
+					.attr("data-valmsg-for", "Questions[" + questionIndex + "].Text");
+
+				// Update remove button value
+				questionGroup.find(".btn-remove-question").val(questionIndex);
+
+				// Update option indexes within the current question group
+				updateOptionIndexes(questionGroup, questionIndex);
 			});
+
+			questionIndex = $(".question-group").length;
 		}
 
-		function updateOptionIndexes(optionsContainer) {
-			var questionGroup = optionsContainer.closest(".question-group");
-			var questionIndex = $(".question-group").index(questionGroup);
-
+		function updateOptionIndexes(optionsContainer, questionIndex) {
 			optionsContainer.find(".option-group").each(function (index) {
 				var optionGroup = $(this);
 				var optionIndex = index;
@@ -206,7 +232,7 @@
 
 				optionGroup.find(".remove-option-btn").off("click").on("click", function () {
 					optionGroup.remove();
-					updateOptionIndexes(optionsContainer);
+					updateOptionIndexes(optionsContainer, questionIndex);
 				});
 			});
 		}
