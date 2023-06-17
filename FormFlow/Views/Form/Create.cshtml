@@ -13,7 +13,7 @@
 			<h4>Create:</h4>
 			<div class="mb-3">
 				<label asp-for="Form.Title">Title</label>
-				<input required="true" asp-for="Form.Title" class="form-control" />
+				<input required="required" asp-for="Form.Title" class="form-control" />
 				<span asp-validation-for="Form.Title" class="text-danger"></span>
 			</div>
 			<h4>Questions:</h4>
@@ -25,7 +25,7 @@
 							<label asp-for="Questions[i].Text" class="flex-grow-1">Question @(i + 1)</label>
 							<button type="button" class="btn btn-danger btn-remove-question">Remove</button>
 						</div>
-						<input asp-for="Questions[i].Text" class="form-control" />
+						<input required="required" asp-for="Questions[i].Text" class="form-control" />
 						<span asp-validation-for="Questions[i].Text" class="text-danger"></span>
 					</div>
 				}
@@ -49,6 +49,7 @@
 </form>
 
 
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-HA7Atf+7H3j5Bk4qcbmu3Nlw2M9HTF30V0GzYFGi+1bD3xORrA1XUap+oAxRs1Hs" crossorigin="anonymous"></script>
 @section Scripts {
 	<script>
@@ -59,29 +60,15 @@
 			addQuestionBtn.click(function () {
 				var questionGroup = $("<div>")
 					.addClass("question-group mb-3");
-
-				var questionIndexLabel = $("<label>")
-					.addClass("flex-grow-1")
+				var label = $("<label>")
+					.attr("for", "Form_Questions_" + questionIndex + "__Text")
 					.text("Question " + (questionIndex + 1));
-
-				var removeQuestionBtn = $("<button>")
-					.attr("type", "button")
-					.addClass("btn btn-danger btn-remove-question")
-					.text("Remove")
-					.click(function () {
-						$(this).closest(".question-group").remove();
-						updateQuestionIndexes();
-					});
-
-				var questionHeader = $("<div>")
-					.addClass("d-flex")
-					.append(questionIndexLabel)
-					.append(removeQuestionBtn);
 
 				var input = $("<input>")
 					.attr("type", "text")
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text")
+					.attr("required", "true")
 					.addClass("form-control")
 					.hide();
 
@@ -89,13 +76,16 @@
 					.addClass("text-danger")
 					.attr("data-valmsg-for", "Form.Questions[" + questionIndex + "].Text");
 
-				questionGroup.append(questionHeader);
+				questionGroup.append(label);
 				questionGroup.append(input);
 				questionGroup.append(validationMessage);
 
 				// Add buttons for QuestionType
 				var questionTypeButtons = $("<div>")
 					.addClass("question-type-buttons");
+				var questionTypeLabel = $("<label>")
+					.text("Question Type:");
+				questionTypeButtons.append(questionTypeLabel);
 
 				var questionTypeValues = @Html.Raw(Json.Serialize(Enum.GetNames(typeof(QuestionType))));
 				for (var i = 0; i < questionTypeValues.length; i++) {
@@ -132,12 +122,11 @@
 				questionGroup.append(questionTypeButtons);
 
 				questionGroup.insertBefore(addQuestionBtn);
-				updateQuestionIndexes();
 
 				questionIndex++;
 			});
 
-			$(document).on("click", ".btn-remove-question", function () {
+			$(document).on("click", ".remove-question-btn", function () {
 				$(this).closest(".question-group").remove();
 				updateQuestionIndexes();
 			});
@@ -169,7 +158,8 @@
 					.attr("type", "text")
 					.attr("name", "Form.Questions[" + questionIndex + "].Options[" + newOptionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Options_" + newOptionIndex + "__Text")
-					.addClass("form-control");
+					.addClass("form-control")
+					.attr("required", "true");
 
 				var newRemoveOptionBtn = $("<button>")
 					.attr("type", "button")
@@ -177,7 +167,7 @@
 					.text("Remove Option")
 					.click(function () {
 						$(this).closest(".option-group").remove();
-						updateOptionIndexes($(this).closest(".options-container"), questionIndex);
+						updateOptionIndexes($(this).closest(".options-container"));
 					});
 
 				var newOptionGroup = $("<div>")
@@ -187,7 +177,7 @@
 				newOptionGroup.append(newRemoveOptionBtn);
 
 				$(this).closest(".options-container").append(newOptionGroup);
-				updateOptionIndexes($(this).closest(".options-container"), questionIndex);
+				updateOptionIndexes($(this).closest(".options-container"));
 			});
 
 			optionsContainer.append(addOptionBtn);
@@ -196,32 +186,19 @@
 		}
 
 		function updateQuestionIndexes() {
-			$(".question-group").each(function (questionIndex) {
-				var questionGroup = $(this);
-
-				// Update label text
-				questionGroup.find("label").text("Question " + (questionIndex + 1));
-
-				// Update input name and ID attributes
-				questionGroup.find("input")
-					.attr("name", "Questions[" + questionIndex + "].Text")
-					.attr("id", "Questions_" + questionIndex + "__Text");
-
-				// Update validation message data-valmsg-for attribute
-				questionGroup.find("span[data-valmsg-for^='Questions']")
-					.attr("data-valmsg-for", "Questions[" + questionIndex + "].Text");
-
-				// Update remove button value
-				questionGroup.find(".btn-remove-question").val(questionIndex);
-
-				// Update option indexes within the current question group
-				updateOptionIndexes(questionGroup, questionIndex);
+			$(".question-group").each(function (index) {
+				var questionIndex = index;
+				$(this).find("label").text("Question " + (questionIndex + 1));
+				$(this).find("input")
+					.attr("name", "Form.Questions[" + questionIndex + "].Text")
+					.attr("id", "Form_Questions_" + questionIndex + "__Text");
 			});
-
-			questionIndex = $(".question-group").length;
 		}
 
-		function updateOptionIndexes(optionsContainer, questionIndex) {
+		function updateOptionIndexes(optionsContainer) {
+			var questionGroup = optionsContainer.closest(".question-group");
+			var questionIndex = $(".question-group").index(questionGroup);
+
 			optionsContainer.find(".option-group").each(function (index) {
 				var optionGroup = $(this);
 				var optionIndex = index;
@@ -232,9 +209,10 @@
 
 				optionGroup.find(".remove-option-btn").off("click").on("click", function () {
 					optionGroup.remove();
-					updateOptionIndexes(optionsContainer, questionIndex);
+					updateOptionIndexes(optionsContainer);
 				});
 			});
 		}
+	
 	</script>
 }
