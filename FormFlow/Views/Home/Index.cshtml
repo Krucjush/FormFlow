@@ -12,10 +12,9 @@
 				<h4><strong>@form.Title</strong></h4>
 			</div>
 			<div class="col-4 my-auto text-center">
-				<a asp-controller="Form"  asp-action="Display" asp-route-formId="@form.Id" class="btn btn-warning">Modify</a>
+				<a asp-controller="Form"  asp-action="Display" asp-route-id="@form.Id" class="btn btn-warning">Modify</a>
 			</div>
 		</div>
 		<hr />
 	}
-	<a asp-controller="Form" asp-action="Create" class="btn btn-success float-end">Add new form</a>
 </form>

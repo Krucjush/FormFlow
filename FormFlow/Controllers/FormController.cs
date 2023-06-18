@@ -37,9 +37,15 @@ namespace FormFlow.Controllers
 			return View(FormViewModel);
 		}
 		[HttpGet]
-		public IActionResult Display()
+		public IActionResult Display(int id)
 		{
-			return View();
+			var form = _dbContext.Forms.Include(f => f.Questions).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
+
+			if (form == null)
+			{
+				return NotFound();
+			}
+			return View(form);
 		}
 		[HttpGet]
 		public IActionResult Create()
@@ -53,7 +59,7 @@ namespace FormFlow.Controllers
 
 			FormViewModel = new FormViewModel
 			{
-				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value),
+				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList(),
 				Form = new Form(),
 				Question = new Question(),
 				Questions = new List<Question>(),
@@ -75,23 +81,28 @@ namespace FormFlow.Controllers
 
 			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 
-			formViewModel.Form.OwnerId = idClaim.Value;
-            formViewModel.Form.Status = Enum.Parse<FormStatus>(status);
-
-			var questions = formViewModel.ListForms.SelectMany(form => form.Questions!).ToList();
-
 			var formDetails = new Form
 			{
 				Title = formViewModel.Form.Title,
-				Questions = questions,
-                Status = formViewModel.Form.Status,
-                OwnerId = formViewModel.Form.OwnerId
+				Questions = formViewModel.Form.Questions!.Select(q => new Question
+				{
+					Text = q.Text,
+					Options = q.Options != null ? q.Options.Select(o => new Option { Text = o.Text }).ToList() : new List<Option>(),
+					FormId = 0,
+					Type = q.Type
+				}).ToList(),
+				Status = Enum.Parse<FormStatus>(status),
+				OwnerId = idClaim.Value
 			};
-            foreach (var question in questions)
-            {
-                _dbContext.Questions.Add(question);
-            }
+
 			_dbContext.Forms.Add(formDetails);
+			_dbContext.SaveChanges();
+
+			foreach (var question in formDetails.Questions)
+			{
+				question.FormId = formDetails.Id;
+			}
+
 			_dbContext.SaveChanges();
 
 			return RedirectToAction("Index");

@@ -1,1 +1,34 @@
-﻿<p>WIP</p>
+﻿@model Form
+
+@{
+	ViewData["Title"] = "Display Form";
+}
+
+<h2>Form: @Model.Title</h2>
+
+<h3>Questions:</h3>
+@if (Model.Questions!.Count > 0)
+{
+	<ol>
+		@foreach (var question in Model.Questions)
+		{
+			<li>
+				<h4>@question.Text</h4>
+
+				@if (question.Options?.Count > 0)
+				{
+					<ul>
+						@foreach (var option in question.Options)
+						{
+							<li>@option.Text</li>
+						}
+					</ul>
+				}
+			</li>
+		}
+	</ol>
+}
+else
+{
+	<p>No questions found.</p>
+}
