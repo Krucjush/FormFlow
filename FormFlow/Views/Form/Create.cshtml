@@ -1,5 +1,6 @@
 ﻿@using FormFlow.Models.Enums
-@model FormViewModel
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model FormFlow.Models.ViewModels.FormViewModel
 
 @{
 	ViewData["Title"] = "Create Form";
@@ -27,6 +28,14 @@
 						</div>
 						<input required="required" asp-for="Questions[i].Text" class="form-control" />
 						<span asp-validation-for="Questions[i].Text" class="text-danger"></span>
+
+						<label asp-for="Questions[i].Type">Type</label>
+						<select asp-for="Questions[i].Type" name="type" class="form-control">
+							@foreach (var questionType in Enum.GetValues(typeof(QuestionType)))
+							{
+								<option value="@questionType">@questionType</option>
+							}
+						</select>
 					</div>
 				}
 				<button type="button" id="addQuestionBtn" class="btn btn-primary">Add Question</button>
@@ -45,15 +54,17 @@
 			</div>
 		</div>
 	</div>
-	<button type="submit" class="btn btn-success float-end">Create</button>
+	<button type="submit" id="submitBtn" class="btn btn-success float-end">Create</button>
 </form>
 
 
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-HA7Atf+7H3j5Bk4qcbmu3Nlw2M9HTF30V0GzYFGi+1bD3xORrA1XUap+oAxRs1Hs" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 @section Scripts {
 	<script>
 		$(document).ready(function () {
+			var questionTypes = [];
 			var questionIndex = @Model.Questions.Count;
 			var addQuestionBtn = $("#addQuestionBtn");
 
@@ -98,7 +109,8 @@
 						.addClass("btn btn-primary question-type-btn")
 						.click(function () {
 							var selectedQuestionType = $(this).val();
-
+							questionTypes.push(selectedQuestionType);
+							
 							// Show corresponding input field based on the selected question type
 							if (selectedQuestionType === "Mark") {
 								$(this).closest(".question-group").find("input").show();
@@ -115,7 +127,7 @@
 
 							$(this).closest(".question-group").find(".question-type-buttons").remove();
 						});
-
+					
 					questionTypeButtons.append(questionTypeButton);
 				}
 
@@ -135,6 +147,27 @@
 				$(this).closest(".option-group").remove();
 				updateOptionIndexes($(this).closest(".options-container"));
 			});
+			$("form").submit(function (event) {
+						event.preventDefault();
+
+						var formData = $(this).serializeArray();
+						formData.push({ name: "type", value: questionTypes });
+
+						$.ajax({
+							url: "@Url.Action("Create", "Form")",
+							type: "POST",
+							data: formData,
+							success: function (response) {
+								// Handle the success response
+								// Redirect or show a success message
+								window.location.href = "@Url.Action("Index", "Form")";
+							},
+							error: function (error) {
+								// Handle the error response
+								// Show an error message or take appropriate action
+							}
+						});
+					});
 		});
 
 		function createOptionsContainer(questionIndex) {
@@ -213,6 +246,6 @@
 				});
 			});
 		}
-	
+
 	</script>
 }

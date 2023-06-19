@@ -1,7 +1,6 @@
-﻿using FormFlow.Models;
-using FormFlow.Models.Enums;
+﻿using FormFlow.Models.Enums;
 
-namespace FormFlow
+namespace FormFlow.Models.ViewModels
 {
 	public class FormViewModel
 	{
@@ -10,5 +9,6 @@ namespace FormFlow
         public Question Question { get; set; }
         public List<Question> Questions { get; set; }
         public FormStatus Status { get; set; } = FormStatus.Public;
-    }
+        public List<QuestionType> QuestionTypes { get; set; }
+	}
 }

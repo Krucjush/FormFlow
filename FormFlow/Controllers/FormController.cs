@@ -2,6 +2,7 @@
 using FormFlow.Data;
 using FormFlow.Models;
 using FormFlow.Models.Enums;
+using FormFlow.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.VisualBasic;
@@ -63,14 +64,15 @@ namespace FormFlow.Controllers
 				Form = new Form(),
 				Question = new Question(),
 				Questions = new List<Question>(),
-				Status = FormStatus.Public
+				Status = FormStatus.Public,
+				QuestionTypes = new List<QuestionType>()
 			};
 
 			return View(FormViewModel);
 		}
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult Create(FormViewModel formViewModel, string status)
+		public IActionResult Create(FormViewModel formViewModel, string status, string type)
 		{
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
@@ -81,15 +83,17 @@ namespace FormFlow.Controllers
 
 			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 
+			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
+
 			var formDetails = new Form
 			{
 				Title = formViewModel.Form.Title,
-				Questions = formViewModel.Form.Questions!.Select(q => new Question
+				Questions = formViewModel.Form.Questions!.Select((q, index) => new Question
 				{
 					Text = q.Text,
 					Options = q.Options != null ? q.Options.Select(o => new Option { Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
-					Type = q.Type
+					Type = Enum.Parse<QuestionType>(typeArray[index])
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
