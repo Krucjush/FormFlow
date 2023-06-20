@@ -87,15 +87,26 @@
 					.addClass("text-danger")
 					.attr("data-valmsg-for", "Form.Questions[" + questionIndex + "].Text");
 
+				var removeQuestionBtn = $("<button>")
+					.attr("type", "button")
+					.addClass("btn btn-danger btn-remove-question")
+					.text("Remove")
+					.click(function () {
+						$(this).closest(".question-group").remove();
+						updateQuestionIndexes();
+					});
+
 				questionGroup.append(label);
 				questionGroup.append(input);
 				questionGroup.append(validationMessage);
+				questionGroup.append(removeQuestionBtn);
 
 				// Add buttons for QuestionType
 				var questionTypeButtons = $("<div>")
 					.addClass("question-type-buttons");
 				var questionTypeLabel = $("<label>")
-					.text("Question Type:");
+					.text("Question Type:")
+					.addClass("question-type-label");
 				questionTypeButtons.append(questionTypeLabel);
 
 				var questionTypeValues = @Html.Raw(Json.Serialize(Enum.GetNames(typeof(QuestionType))));
@@ -110,7 +121,7 @@
 						.click(function () {
 							var selectedQuestionType = $(this).val();
 							questionTypes.push(selectedQuestionType);
-							
+
 							// Show corresponding input field based on the selected question type
 							if (selectedQuestionType === "Mark") {
 								$(this).closest(".question-group").find("input").show();
@@ -127,7 +138,7 @@
 
 							$(this).closest(".question-group").find(".question-type-buttons").remove();
 						});
-					
+
 					questionTypeButtons.append(questionTypeButton);
 				}
 
@@ -135,7 +146,8 @@
 
 				questionGroup.insertBefore(addQuestionBtn);
 
-				questionIndex++;
+				questionIndex++; // Increment questionIndex only when adding a new question
+				updateQuestionIndexes();
 			});
 
 			$(document).on("click", ".remove-question-btn", function () {
@@ -148,26 +160,26 @@
 				updateOptionIndexes($(this).closest(".options-container"));
 			});
 			$("form").submit(function (event) {
-						event.preventDefault();
+				event.preventDefault();
 
-						var formData = $(this).serializeArray();
-						formData.push({ name: "type", value: questionTypes });
+				var formData = $(this).serializeArray();
+				formData.push({ name: "type", value: questionTypes });
 
-						$.ajax({
-							url: "@Url.Action("Create", "Form")",
-							type: "POST",
-							data: formData,
-							success: function (response) {
-								// Handle the success response
-								// Redirect or show a success message
-								window.location.href = "@Url.Action("Index", "Form")";
-							},
-							error: function (error) {
-								// Handle the error response
-								// Show an error message or take appropriate action
-							}
-						});
-					});
+				$.ajax({
+					url: "@Url.Action("Create", "Form")",
+					type: "POST",
+					data: formData,
+					success: function (response) {
+						// Handle the success response
+						// Redirect or show a success message
+						window.location.href = "@Url.Action("Index", "Form")";
+					},
+					error: function (error) {
+						// Handle the error response
+						// Show an error message or take appropriate action
+					}
+				});
+			});
 		});
 
 		function createOptionsContainer(questionIndex) {
@@ -185,7 +197,8 @@
 
 				var newOptionLabel = $("<label>")
 					.attr("for", "Form_Questions_" + questionIndex + "__Options_" + newOptionIndex + "__Text")
-					.text("Option " + (newOptionIndex + 1));
+					.text("Option " + (newOptionIndex + 1))
+					.addClass("option-label");
 
 				var newOptionInput = $("<input>")
 					.attr("type", "text")
@@ -221,7 +234,7 @@
 		function updateQuestionIndexes() {
 			$(".question-group").each(function (index) {
 				var questionIndex = index;
-				$(this).find("label").text("Question " + (questionIndex + 1));
+				$(this).find("label:not(.question-type-label):not(.option-label)").text("Question " + (questionIndex + 1));
 				$(this).find("input")
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
