@@ -54,6 +54,7 @@
 			</div>
 		</div>
 	</div>
+	@Html.ValidationMessageFor(model => model.Questions, "", new { @class = "text-danger" })
 	<button type="submit" id="submitBtn" class="btn btn-success float-end">Create</button>
 </form>
 
@@ -74,6 +75,8 @@
 				var label = $("<label>")
 					.attr("for", "Form_Questions_" + questionIndex + "__Text")
 					.text("Question " + (questionIndex + 1));
+				$("#questionContainer #questionValidationMsg").remove();
+
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -158,9 +161,23 @@
 			$(document).on("click", ".remove-option-btn", function () {
 				$(this).closest(".option-group").remove();
 				updateOptionIndexes($(this).closest(".options-container"));
+
+				
 			});
 			$("form").submit(function (event) {
 				event.preventDefault();
+				
+				if	($(".question-group").length === 0) {
+					if ($("#questionContainer #questionValidationMsg").length === 0) {
+						var validationMessage = $("<span>")
+							.addClass("text-danger")
+							.attr("id", "questionValidationMsg")
+							.text("At least one question is required.");
+
+						$("#questionContainer").append(validationMessage);
+					}
+					return;
+				}
 
 				var formData = $(this).serializeArray();
 				formData.push({ name: "type", value: questionTypes });

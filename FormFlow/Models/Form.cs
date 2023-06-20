@@ -13,6 +13,7 @@ namespace FormFlow.Models
 		public string Title { get; set; }
 		public FormStatus Status { get; set; } = FormStatus.Public;
 		public string? OwnerId { get; set; }
+		[AtLeastOneElement(ErrorMessage = "At least one question is required.")]
 		public List<Question>? Questions { get; set; }
 	}
 }
