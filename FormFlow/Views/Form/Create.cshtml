@@ -119,7 +119,7 @@
 						.attr("type", "button")
 						.attr("name", "Form.Questions[" + questionIndex + "].Type")
 						.attr("value", questionType)
-						.text(questionType)
+						.text(questionType.replace(/([A-Z])/g, " $1"))
 						.addClass("btn btn-primary question-type-btn")
 						.click(function () {
 							var selectedQuestionType = $(this).val();
@@ -195,13 +195,20 @@
 						// Check if the options container contains at least one option group
 						if (optionGroups.length === 0) {
 							errorExists = true;
-							return false; // Exit the loop
+							var errorSpan = $(this).closest(".question-group").find("#errorSpan");
+							if(errorSpan.length === 0) {
+								errorSpan = $("<span>")
+									.text("Multiple options require at least one option")
+									.addClass("text-danger")
+									.attr("id", "errorSpan");
+								$(this).closest(".question-group").append(errorSpan);
+							}
+							errorSpan.show();
 						}
 					});
 
 					if (errorExists) {
 						// Show the error span and prevent form submission
-						$("#errorSpan").show();
 						return;
 					}
 				}
@@ -268,7 +275,7 @@
 
 				$(this).closest(".options-container").append(newOptionGroup);
 				updateOptionIndexes($(this).closest(".options-container"));
-				$("#errorSpan").hide()
+				$(this).closest(".question-group").find("#errorSpan").hide();
 			});
 
 			optionsContainer.append(addOptionBtn);
