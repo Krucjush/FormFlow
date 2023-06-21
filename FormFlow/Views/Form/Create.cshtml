@@ -54,12 +54,13 @@
 			</div>
 		</div>
 	</div>
+	@Html.ValidationMessageFor(model => model.Questions, "", new { @class = "text-danger" })
 	<button type="submit" id="submitBtn" class="btn btn-success float-end">Create</button>
 </form>
 
 
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha384-HA7Atf+7H3j5Bk4qcbmu3Nlw2M9HTF30V0GzYFGi+1bD3xORrA1XUap+oAxRs1Hs" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 @section Scripts {
 	<script>
@@ -74,6 +75,8 @@
 				var label = $("<label>")
 					.attr("for", "Form_Questions_" + questionIndex + "__Text")
 					.text("Question " + (questionIndex + 1));
+				$("#questionContainer #questionValidationMsg").remove();
+
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -131,6 +134,12 @@
 								$(this).closest(".question-group").find(".options-container").remove();
 								var optionsContainer = createOptionsContainer(questionIndex);
 								$(this).closest(".question-group").append(optionsContainer);
+								var errorSpan = $("<span>")
+									.text("Multiple options require at least one option")
+									.addClass("text-danger")
+									.css("display", "none")
+									.attr("id", "errorSpan");
+								$(this).closest(".question-group").append(errorSpan);
 							} else if (selectedQuestionType === "Open") {
 								$(this).closest(".question-group").find("input").show().addClass("large-input");
 								$(this).closest(".question-group").find(".options-container").remove();
@@ -158,9 +167,44 @@
 			$(document).on("click", ".remove-option-btn", function () {
 				$(this).closest(".option-group").remove();
 				updateOptionIndexes($(this).closest(".options-container"));
+
+				
 			});
 			$("form").submit(function (event) {
 				event.preventDefault();
+				
+				if	($(".question-group").length === 0) {
+					if ($("#questionContainer #questionValidationMsg").length === 0) {
+						var validationMessage = $("<span>")
+							.addClass("text-danger")
+							.attr("id", "questionValidationMsg")
+							.text("At least one question is required.");
+
+						$("#questionContainer").append(validationMessage);
+					}
+					return;
+				}
+
+				// Check if there is at least one options container
+				var optionsContainers = $(".options-container");
+				if (optionsContainers.length > 0) {
+					// Iterate over each options container
+					var errorExists = false;
+					optionsContainers.each(function () {
+						var optionGroups = $(this).find(".option-group");
+						// Check if the options container contains at least one option group
+						if (optionGroups.length === 0) {
+							errorExists = true;
+							return false; // Exit the loop
+						}
+					});
+
+					if (errorExists) {
+						// Show the error span and prevent form submission
+						$("#errorSpan").show();
+						return;
+					}
+				}
 
 				var formData = $(this).serializeArray();
 				formData.push({ name: "type", value: questionTypes });
@@ -224,6 +268,7 @@
 
 				$(this).closest(".options-container").append(newOptionGroup);
 				updateOptionIndexes($(this).closest(".options-container"));
+				$("#errorSpan").hide()
 			});
 
 			optionsContainer.append(addOptionBtn);

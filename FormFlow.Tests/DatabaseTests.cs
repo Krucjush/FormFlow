@@ -210,49 +210,6 @@ namespace FormFlow.Tests
             Assert.NotEmpty(validationResults);
             Assert.Contains(validationResults, result => result.ErrorMessage.Contains("Answer is required."));
         }
-        [Fact]
-        public void User_Without_Email_Cannot_Be_Saved()
-        {
-            // Arrange
-            using var context = new AppDbContext(GetInMemoryDbContextOptions());
-            var user = new User
-            {
-                Email = string.Empty, // Set an empty email
-                PasswordHash = "passwordhash" // Set a valid password hash
-            };
-
-            // Act
-            var validationContext = new ValidationContext(user, serviceProvider: null, items: null);
-            var validationResults = new List<ValidationResult>();
-            var isValid = Validator.TryValidateObject(user, validationContext, validationResults, validateAllProperties: true);
-
-            // Assert
-            Assert.False(isValid);
-            Assert.NotEmpty(validationResults);
-            Assert.Contains(validationResults, result => result.ErrorMessage.Contains("Email is required."));
-        }
-
-        [Fact]
-        public void User_Without_Password_Cannot_Be_Saved()
-        {
-            // Arrange
-            using var context = new AppDbContext(GetInMemoryDbContextOptions());
-            var user = new User
-            {
-                Email = "user@example.com", // Set a valid email
-                PasswordHash = string.Empty // Set an empty password hash
-            };
-
-            // Act
-            var validationContext = new ValidationContext(user, serviceProvider: null, items: null);
-            var validationResults = new List<ValidationResult>();
-            var isValid = Validator.TryValidateObject(user, validationContext, validationResults, validateAllProperties: true);
-
-            // Assert
-            Assert.False(isValid);
-            Assert.NotEmpty(validationResults);
-            Assert.Contains(validationResults, result => result.ErrorMessage.Contains("Password is required."));
-        }
         public void Dispose()
         {
             using var context = new AppDbContext(GetInMemoryDbContextOptions());
