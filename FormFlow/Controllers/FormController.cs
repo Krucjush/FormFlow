@@ -14,7 +14,7 @@ namespace FormFlow.Controllers
 	{
 		private readonly AppDbContext _dbContext;
 		[BindProperty] 
-		public FormViewModel FormViewModel { get; set; }
+		public FormViewModel? FormViewModel { get; set; }
 
 		public FormController(AppDbContext dbContext)
 		{
@@ -59,10 +59,13 @@ namespace FormFlow.Controllers
 				return Unauthorized();
 			}
 
-			FormViewModel = new FormViewModel
+			FormViewModel ??= new FormViewModel
 			{
 				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList(),
-				Form = new Form(),
+				Form = new Form
+				{
+					Questions = new List<Question>()
+				},
 				Question = new Question(),
 				Questions = new List<Question>(),
 				Status = FormStatus.Public,
@@ -82,7 +85,7 @@ namespace FormFlow.Controllers
 				return Unauthorized();
 			}
 
-			if (formViewModel.Form.Questions?.Count < 1)
+			if (formViewModel.Form?.Questions?.Count < 1)
 			{
 				return BadRequest("At lest one question is required.");
 			}
@@ -122,9 +125,48 @@ namespace FormFlow.Controllers
 
 			return RedirectToAction("Index");
 		}
+		[Authorize]
+		[HttpGet]
 		public IActionResult Modify(int formId)
 		{
-			return View("Index");
+			var form = _dbContext.Forms
+				.Include(f => f.Questions)!
+				.ThenInclude(q => q.Options)?
+				.FirstOrDefault(f => f.Id == formId);
+
+			if (form == null)
+			{
+				return NotFound();
+			}
+
+			var formViewModel = new FormViewModel
+			{
+				Form = new Form
+				{
+					Id = form.Id,
+					Title = form.Title,
+					Questions = form.Questions.Select(q => new Question
+					{
+						Text = q.Text,
+						Options = q.Options.Select(o => new Option
+						{
+							Text = o.Text
+						}).ToList(),
+						Type = q.Type
+					}).ToList(),
+					Status = form.Status,
+					OwnerId = form.OwnerId
+				},
+				Status = form.Status,
+				QuestionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList()
+			};
+			return View(formViewModel);
+		}
+		[ValidateAntiForgeryToken]
+		[HttpPost]
+		public IActionResult Modify(FormViewModel formViewModel)
+		{
+			return RedirectToAction("Index");
 		}
 
 		public IActionResult Remove(int formId)

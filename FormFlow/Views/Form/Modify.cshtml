@@ -2,20 +2,16 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FormFlow.Models.ViewModels.FormViewModel
 
-@{
-	ViewData["Title"] = "Create Form";
-}
-
-<h2>Create Form</h2>
+<h2>Modify Form</h2>
 
 <form method="post" class="mt-4">
 	<div class="row">
 		<div class="col-6 px-3">
-			<h4>Create:</h4>
+			<h4>Modify:</h4>
 			<div class="mb-3">
-				<label asp-for="Form.Title">Title</label>
-				<input required="required" asp-for="Form.Title" class="form-control"/>
-				<span asp-validation-for="Form.Title" class="text-danger"></span>
+				<label asp-for="Form!.Title">Title</label>
+				<input required="required" asp-for="Form!.Title" class="form-control" />
+				<span asp-validation-for="Form!.Title" class="text-danger"></span>
 			</div>
 			<h4>Questions:</h4>
 			<div id="questionContainer" class="mb-3">
@@ -23,19 +19,32 @@
 				{
 					<div class="question-group mb-3">
 						<div class="d-flex">
-							<label asp-for="Questions[i].Text" class="flex-grow-1">Question @(i + 1)</label>
-							<button type="button" class="btn btn-danger btn-remove-question">Remove</button>
+							<label asp-for="@Model.Form.Questions[i].Text" class="flex-grow-1">Question @(i + 1)</label>
+							<button type="button" class="btn btn-danger remove-question-btn">Remove</button>
 						</div>
-						<input required="required" asp-for="Questions[i].Text" class="form-control"/>
-						<span asp-validation-for="Questions[i].Text" class="text-danger"></span>
-
-						<label asp-for="Questions[i].Type">Type</label>
-						<select asp-for="Questions[i].Type" name="type" class="form-control">
-							@foreach (var questionType in Enum.GetValues(typeof(QuestionType)))
-							{
-								<option value="@questionType">@questionType</option>
-							}
-						</select>
+						<input required="required" asp-for="@Model.Form.Questions[i].Text" class="form-control" value="@Model.Form.Questions![i].Text" />
+						<span asp-validation-for="@Model.Form.Questions[i].Text" class="text-danger"></span>
+						
+						<div class="mb-3">
+							<label asp-for="@Model.Form.Questions[i].Type" class="question-type-label">Type</label>
+						</div>
+						<input asp-for="@Model.Form.Questions[i].Type" value="@Model.Form.Questions[i].Type" readonly="readonly" />
+						@if (Model.Form.Questions[i].Type == QuestionType.MultipleOptions)
+						{
+							<div class="options-container">
+								@for (var j = 0; j < Model.Form.Questions[i].Options!.Count; j++)
+								{
+									<div class="option-group">
+										<div mb-3>
+											<label asp-for="@Model.Form.Questions[i].Options" class="flex-grow-1 option-label">Option @(j + 1)</label>
+											<button type="button" class="btn btn-danger remove-option-btn">Remove Option</button>
+										</div>
+										<input required="required" asp-for="@Model.Form.Questions[i].Options![j]" class="form-control" value="@Model.Form.Questions[i].Options![j].Text"/>
+									</div>
+								}
+								<button type="button" class="btn btn-primary add-option-btn">Add Option</button>
+							</div>
+						}
 					</div>
 				}
 				<button type="button" id="addQuestionBtn" class="btn btn-primary">Add Question</button>
@@ -45,7 +54,7 @@
 				@foreach (FormStatus status in Enum.GetValues(typeof(FormStatus)))
 				{
 					<div class="status-group mb-3">
-						<input class="form-check-input" type="radio" name="Status" value="@status" id="status_@(status)" @(status == FormStatus.Public ? "checked" : "")/>
+						<input class="form-check-input" type="radio" name="Status" value="@status" id="status_@(status)" @(status == Model.Form.Status ? "checked" : "") />
 						<label class="form-check-label" for="status_@(status)">
 							@status
 						</label>
@@ -57,8 +66,6 @@
 	@Html.ValidationMessageFor(model => model.Questions, "", new { @class = "text-danger" })
 	<button type="submit" id="submitBtn" class="btn btn-success float-end">Save</button>
 </form>
-
-
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -166,9 +173,44 @@
 
 			$(document).on("click", ".remove-option-btn", function () {
 				$(this).closest(".option-group").remove();
-				updateOptionIndexes($(this).closest(".options-container"));
+				updateOptionIndexes($(this).closest(".options-container"));	
 			});
-			
+
+			$(".add-option-btn").click(function () {
+				var optionsCount = $(this).closest(".options-container").find(".option-group").length;
+				var newOptionIndex = optionsCount;
+
+				var newOptionLabel = $("<label>")
+					.attr("for", "Form_Questions_" + questionIndex + "__Options_" + newOptionIndex + "__Text")
+					.text("Option " + (newOptionIndex + 1))
+					.addClass("option-label");
+
+				var newOptionInput = $("<input>")
+					.attr("type", "text")
+					.attr("name", "Form.Questions[" + questionIndex + "].Options[" + newOptionIndex + "].Text")
+					.attr("id", "Form_Questions_" + questionIndex + "__Options_" + newOptionIndex + "__Text")
+					.addClass("form-control")
+					.attr("required", "true");
+
+				var newRemoveOptionBtn = $("<button>")
+					.attr("type", "button")
+					.addClass("btn btn-danger remove-option-btn")
+					.text("Remove Option")
+					.click(function () {
+						$(this).closest(".option-group").remove();
+						updateOptionIndexes($(this).closest(".options-container"));
+					});
+
+				var newOptionGroup = $("<div>")
+					.addClass("option-group mb-3");
+				newOptionGroup.append(newOptionLabel);
+				newOptionGroup.append(newOptionInput);
+				newOptionGroup.append(newRemoveOptionBtn);
+
+				$(this).closest(".options-container").append(newOptionGroup);
+				updateOptionIndexes($(this).closest(".options-container"));
+				$(this).closest(".question-group").find("#errorSpan").hide();
+			});
 
 			$("form").submit(function (event) {
 				event.preventDefault();
@@ -217,7 +259,7 @@
 				formData.push({ name: "type", value: questionTypes });
 
 				$.ajax({
-					url: "@Url.Action("Create", "Form")",
+					url: "@Url.Action("Modify", "Form")",
 					type: "POST",
 					data: formData,
 					success: function (response) {
