@@ -11,7 +11,7 @@ namespace FormFlow.Models
 		[Required(ErrorMessage = "Text is required.")]
 		public string Text { get; set; }
 		[Required(ErrorMessage = "Type is required.")]
-		public QuestionType Type { get; set; }
+		public QuestionType? Type { get; set; }
 		public List<Option>? Options { get; set; }
 		public Form Form { get; set; }
 	}
