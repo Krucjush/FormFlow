@@ -40,7 +40,7 @@ namespace FormFlow.Controllers
 		[HttpGet]
 		public IActionResult Display(int id)
 		{
-			var form = _dbContext.Forms.Include(f => f.Questions).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
+			var form = _dbContext.Forms.Include(f => f.Questions!).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
 
 			if (form == null)
 			{
@@ -48,6 +48,7 @@ namespace FormFlow.Controllers
 			}
 			return View(form);
 		}
+		[Authorize]
 		[HttpGet]
 		public IActionResult Create()
 		{
@@ -81,8 +82,13 @@ namespace FormFlow.Controllers
 				return Unauthorized();
 			}
 
-			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
+			if (formViewModel.Form.Questions?.Count < 1)
+			{
+				return BadRequest("At lest one question is required.");
+			}
 
+			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
+			
 			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
 
 			var formDetails = new Form
@@ -98,6 +104,11 @@ namespace FormFlow.Controllers
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
 			};
+
+			if (formDetails.Questions.Any(formDetailsQuestion => formDetailsQuestion.Type is QuestionType.MultipleOptions && formDetailsQuestion.Options!.Count < 1))
+			{
+				return BadRequest("At least one option is required for a MultipleOptions question.");
+			}
 
 			_dbContext.Forms.Add(formDetails);
 			_dbContext.SaveChanges();

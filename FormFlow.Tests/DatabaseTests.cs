@@ -18,7 +18,7 @@ namespace FormFlow.Tests
             _testOutputHelper = testOutputHelper;
         }
 
-        private DbContextOptions<AppDbContext> GetInMemoryDbContextOptions()
+        private static DbContextOptions<AppDbContext> GetInMemoryDbContextOptions()
         {
             return new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDatabase")
@@ -209,11 +209,6 @@ namespace FormFlow.Tests
             Assert.False(isValid);
             Assert.NotEmpty(validationResults);
             Assert.Contains(validationResults, result => result.ErrorMessage.Contains("Answer is required."));
-        }
-        public void Dispose()
-        {
-            using var context = new AppDbContext(GetInMemoryDbContextOptions());
-            context.Database.EnsureDeleted();
         }
     }
 
