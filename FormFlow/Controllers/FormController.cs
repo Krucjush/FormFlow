@@ -163,9 +163,58 @@ namespace FormFlow.Controllers
 			return View(formViewModel);
 		}
 		[ValidateAntiForgeryToken]
-		[HttpPost]
-		public IActionResult Modify(FormViewModel formViewModel)
+		[HttpPatch]
+		public IActionResult Modify(FormViewModel formViewModel, string status, string type)
 		{
+			var claims = User.Identity as ClaimsIdentity;
+			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
+
+			if (idClaim == null)
+			{
+				return Unauthorized();
+			}
+
+			if (formViewModel.Form?.Questions?.Count < 1)
+			{
+				return BadRequest("At lest one question is required.");
+			}
+
+			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
+			
+			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
+			var diff = formViewModel.Form!.Questions!.Count - typeArray.Count;
+
+			var formDetails = new Form
+			{
+				Id = formViewModel.Form!.Id,
+				Title = formViewModel.Form.Title,
+				Questions = formViewModel.Form.Questions!.Select((q, index) => new Question
+				{
+					Id = q.Id,
+					Text = q.Text,
+					Options = q.Options != null ? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList() : new List<Option>(),
+					FormId = 0,
+					Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff])
+				}).ToList(),
+				Status = Enum.Parse<FormStatus>(status),
+				OwnerId = idClaim.Value
+			};
+
+			if (formDetails.Questions.Any(formDetailsQuestion => formDetailsQuestion.Type is QuestionType.MultipleOptions && formDetailsQuestion.Options!.Count < 1))
+			{
+				return BadRequest("At least one option is required for a MultipleOptions question.");
+			}
+
+			_dbContext.Forms.Update(formDetails);
+			_dbContext.SaveChanges();
+
+			foreach (var question in formDetails.Questions)
+			{
+				question.FormId = formDetails.Id;
+			}
+
+			_dbContext.SaveChanges();
+
 			return RedirectToAction("Index");
 		}
 
