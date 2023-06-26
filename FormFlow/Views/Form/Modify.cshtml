@@ -12,6 +12,7 @@
 				<label asp-for="Form!.Title">Title</label>
 				<input required="required" asp-for="Form!.Title" class="form-control" />
 				<span asp-validation-for="Form!.Title" class="text-danger"></span>
+				<input type="hidden" asp-for="Form!.Id" value="@Model.Form!.Id"/>
 			</div>
 			<h4>Questions:</h4>
 			<div id="questionContainer" class="mb-3">
@@ -64,6 +65,12 @@
 		</div>
 	</div>
 	@Html.ValidationMessageFor(model => model.Questions, "", new { @class = "text-danger" })
+	@if (ViewBag.FormHasResponses)
+	{
+		<div class="popup">
+			<span class="popuptext text-danger" id="formHasResponsesPopup">This form already has responses and will be added as a new one on form submission.</span>
+		</div>
+	}
 	<button type="submit" id="submitBtn" class="btn btn-success float-end">Save</button>
 </form>
 
