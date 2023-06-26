@@ -39,7 +39,7 @@
 											<label asp-for="@Model.Form.Questions[i].Options" class="flex-grow-1 option-label">Option @(j + 1)</label>
 											<button type="button" class="btn btn-danger remove-option-btn">Remove Option</button>
 										</div>
-										<input required="required" asp-for="@Model.Form.Questions[i].Options![j]" class="form-control" value="@Model.Form.Questions[i].Options![j].Text"/>
+										<input required="required" asp-for="@Model.Form.Questions[i].Options![j].Text" class="form-control" value="@Model.Form.Questions[i].Options![j].Text"/>
 									</div>
 								}
 								<button type="button" class="btn btn-primary add-option-btn">Add Option</button>

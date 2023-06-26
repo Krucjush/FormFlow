@@ -527,9 +527,9 @@ namespace FormFlow.Tests
 
 			// Create a mock claims identity with a mock claim for the user ID
 			var claims = new List<Claim>
-	{
-		new(ClaimTypes.NameIdentifier, "user008")
-	};
+			{
+				new(ClaimTypes.NameIdentifier, "user008")
+			};
 			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
 			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
 
@@ -584,6 +584,392 @@ namespace FormFlow.Tests
 			// Assert
 			var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
 			Assert.Equal("Index", redirectToActionResult.ActionName);
+		}
+
+		[Fact]
+		public void Modify_UnauthorizedUser_ReturnsUnauthorizedResult()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			// Create a mock claims identity with no claims
+			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
+
+			// Create a mock user identity with the mock claims identity
+			var mockUserIdentity = new Mock<ClaimsPrincipal>();
+			mockUserIdentity.Setup(u => u.Identity).Returns(mockClaimsIdentity.Object);
+
+			// Create a mock HTTP context with the mock user identity
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserIdentity.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			using var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			// Act
+			var result = controller.Modify(new FormViewModel(), "status", "type");
+
+			// Assert
+			Assert.IsType<UnauthorizedResult>(result);
+		}
+		[Fact]
+		public void Modify_FormNotFound_ReturnsNotFoundResult()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			const int formId = 1; // ID of the non-existent form
+
+			using var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext);
+
+			// Act
+			var result = controller.Modify(formId);
+
+			// Assert
+			Assert.IsType<NotFoundResult>(result);
+		}
+		[Fact]
+		public async Task Modify_NoQuestions_ReturnsBadRequestResult()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var claims = new List<Claim>
+			{
+				new(ClaimTypes.NameIdentifier, "user009")
+			};
+			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
+			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
+
+			// Create a mock user identity with the mock claims identity
+			var mockUserIdentity = new Mock<ClaimsPrincipal>();
+			mockUserIdentity.Setup(u => u.Identity).Returns(mockClaimsIdentity.Object);
+
+			// Create a mock HTTP context with the mock user identity
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserIdentity.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			await using var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			var formViewModel = new FormViewModel
+			{
+				Form = new Form
+				{
+					Title = "Test Form",
+					Questions = new List<Question>(),
+					Status = FormStatus.Public,
+					OwnerId = "user009"
+				},
+				Status = FormStatus.Public,
+				QuestionTypes = new List<QuestionType>()
+			};
+
+			// Act
+			var result = controller.Modify(formViewModel, "Public", "Open,MultipleOptions");
+
+			// Assert
+			Assert.IsType<BadRequestObjectResult>(result);
+			var createdForm = await dbContext.Forms.FirstOrDefaultAsync(f => f.OwnerId == "user009" && f.Title == "Test Form");
+			Assert.Null(createdForm);
+		}
+		[Fact]
+		public async Task Modify_DataWithMultipleOptionsQuestionWithoutOption_ReturnsBadRequest()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			// Create a mock claims identity with a mock claim for the user ID
+			var claims = new List<Claim>
+			{
+				new(ClaimTypes.NameIdentifier, "user010")
+			};
+			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
+			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
+
+			// Create a mock user identity with the mock claims identity
+			var mockUserIdentity = new Mock<ClaimsPrincipal>();
+			mockUserIdentity.Setup(u => u.Identity).Returns(mockClaimsIdentity.Object);
+
+			// Create a mock HTTP context with the mock user identity
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserIdentity.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			await using var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			var formViewModel = new FormViewModel
+			{
+				Form = new Form
+				{
+					Title = "Test Form",
+					Questions = new List<Question>
+					{
+						new()
+						{
+							Text = "Test Question 1",
+							Options = new List<Option>(),
+							FormId = 0
+						},
+						new()
+						{
+							Text = "Test Question 2",
+							Options = new List<Option>(),
+							FormId = 0
+						}
+					},
+					Status = FormStatus.Public,
+					OwnerId = "user010"
+				},
+				Status = FormStatus.Public,
+				QuestionTypes = new List<QuestionType>()
+			};
+
+			// Act
+			var result = controller.Modify(formViewModel, "Public", "Open,MultipleOptions");
+
+			// Assert
+			Assert.IsType<BadRequestObjectResult>(result);
+			var createdForm = await dbContext.Forms.Where(f => f.OwnerId == "user010").FirstOrDefaultAsync(f => f.Title == "Test Form");
+			Assert.Null(createdForm);
+		}
+		[Fact]
+		public void Modify_UserLoggedInAndFormExists_ReturnsViewResult()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			const string userId = "user011";
+			const int formId = 1;
+
+			var claims = new List<Claim>
+			{
+				new(ClaimTypes.NameIdentifier, userId)
+			};
+			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
+			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
+
+			// Create a mock user identity with the mock claims identity
+			var mockUserIdentity = new Mock<ClaimsPrincipal>();
+			mockUserIdentity.Setup(u => u.Identity).Returns(mockClaimsIdentity.Object);
+
+			// Create a mock HTTP context with the mock user identity
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserIdentity.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			using var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			var existingForm = new Form
+			{
+				Id = formId,
+				Title = "Existing Form",
+				Questions = new List<Question>(),
+				Status = FormStatus.Public,
+				OwnerId = userId
+			};
+
+			dbContext.Forms.Add(existingForm);
+			dbContext.SaveChanges();
+
+			// Act
+			var result = controller.Modify(formId);
+
+			// Assert
+			Assert.IsType<ViewResult>(result);
+			var viewResult = (ViewResult)result;
+			var model = viewResult.Model as FormViewModel;
+			Assert.NotNull(model);
+			Assert.Equal(formId, model.Form!.Id);
+			Assert.Equal("Existing Form", model.Form.Title);
+		}
+		[Fact]
+		public void Modify_ValidFormSubmitted_RedirectsToIndex()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			const string userId = "user012";
+			const int formId = 2;
+
+			var claims = new List<Claim>
+	{
+		new(ClaimTypes.NameIdentifier, userId)
+	};
+			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
+			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
+
+			// Create a mock user identity with the mock claims identity
+			var mockUserIdentity = new Mock<ClaimsPrincipal>();
+			mockUserIdentity.Setup(u => u.Identity).Returns(mockClaimsIdentity.Object);
+
+			// Create a mock HTTP context with the mock user identity
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserIdentity.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			using var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			var existingForm = new Form
+			{
+				Id = formId,
+				Title = "Test Form",
+				Questions = new List<Question>
+		{
+			new()
+			{
+				Text = "Test Question 1",
+				Options = new List<Option>(),
+				FormId = 2,
+				Type = QuestionType.Open
+			},
+			new()
+			{
+				Text = "Test Question 2",
+				Options = new List<Option>
+				{
+					new()
+					{
+						Text = "Test Option 1"
+					},
+					new()
+					{
+						Text = "Test Option 2"
+					}
+				},
+				FormId = 2,
+				Type = QuestionType.MultipleOptions
+			}
+		},
+				Status = FormStatus.Public,
+				OwnerId = userId // Updated to use userId
+			};
+
+			dbContext.Forms.Add(existingForm);
+			dbContext.SaveChanges();
+
+			var formViewModel = new FormViewModel
+			{
+				Form = new Form
+				{
+					Title = "Updated Test Form",
+					Questions = new List<Question>
+					{
+						new()
+						{
+							Text = "Updated Test Question 1",
+							Options = new List<Option>(),
+							FormId = 0,
+							Type = QuestionType.Open
+						},
+						new()
+						{
+							Text = "Updated Test Question 2",
+							Options = new List<Option>
+					{
+						new()
+						{
+							Text = "Updated Test Option 1"
+						},
+						new()
+						{
+							Text = "Updated Test Option 2"
+						}
+					},
+					FormId = 2,
+					Type = QuestionType.MultipleOptions
+				}
+			},
+					Status = FormStatus.Public,
+					OwnerId = userId // Updated to use userId
+				},
+				Status = FormStatus.Private,
+				QuestionTypes = new List<QuestionType>()
+			};
+
+			// Act
+			var result = controller.Modify(formViewModel, "Private", "");
+
+			// Assert
+			Assert.IsType<RedirectToActionResult>(result);
+			var redirectToActionResult = (RedirectToActionResult)result;
+			Assert.Equal("Index", redirectToActionResult.ActionName);
+			Assert.Null(redirectToActionResult.ControllerName);
+
+			var updatedForm = dbContext.Forms.Find(formId);
+			Assert.NotNull(updatedForm);
+			Assert.Equal("Updated Test Form", updatedForm.Title); // Updated assertion
+
+			// Check the updated form's questions and their properties
+			var updatedQuestion1 = updatedForm.Questions.FirstOrDefault(q => q.Text == "Updated Test Question 1");
+			Assert.NotNull(updatedQuestion1);
+			Assert.Equal(QuestionType.Open, updatedQuestion1.Type);
+
+			var updatedQuestion2 = updatedForm.Questions.FirstOrDefault(q => q.Text == "Updated Test Question 2");
+			Assert.NotNull(updatedQuestion2);
+			Assert.Equal(QuestionType.MultipleOptions, updatedQuestion2.Type);
+
+			// Additional assertions for question options, if necessary
+
+			Assert.Equal(FormStatus.Private, updatedForm.Status);
 		}
 	}
 }

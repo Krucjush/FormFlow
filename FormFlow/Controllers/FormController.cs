@@ -145,10 +145,10 @@ namespace FormFlow.Controllers
 				{
 					Id = form.Id,
 					Title = form.Title,
-					Questions = form.Questions.Select(q => new Question
+					Questions = form.Questions!.Select(q => new Question
 					{
 						Text = q.Text,
-						Options = q.Options.Select(o => new Option
+						Options = q.Options!.Select(o => new Option
 						{
 							Text = o.Text
 						}).ToList(),
@@ -164,7 +164,7 @@ namespace FormFlow.Controllers
 		}
 		[ValidateAntiForgeryToken]
 		[HttpPatch]
-		public IActionResult Modify(FormViewModel formViewModel, string status, string type)
+		public IActionResult Modify(FormViewModel formViewModel, string status, string? type)
 		{
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
@@ -180,8 +180,11 @@ namespace FormFlow.Controllers
 			}
 
 			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
-			
-			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
+			var typeArray = new List<string>();
+			if (type != null)
+			{
+				typeArray = type.Split(',').Select(t => t.Trim()).ToList();
+			}
 			var diff = formViewModel.Form!.Questions!.Count - typeArray.Count;
 
 			var formDetails = new Form
