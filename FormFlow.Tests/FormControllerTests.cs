@@ -839,12 +839,12 @@ namespace FormFlow.Tests
 				.Options;
 
 			const string userId = "user012";
-			const int formId = 2;
+			const int formId = 12;
 
 			var claims = new List<Claim>
-	{
-		new(ClaimTypes.NameIdentifier, userId)
-	};
+			{
+				new(ClaimTypes.NameIdentifier, userId)
+			};
 			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
 			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
 
@@ -868,47 +868,50 @@ namespace FormFlow.Tests
 				ControllerContext = mockControllerContext
 			};
 
-			var existingForm = new Form
+			var existingForm = new FormViewModel
 			{
-				Title = "Test Form",
-				Questions = new List<Question>
-		{
-			new()
-			{
-				Text = "Test Question 1",
-				Options = new List<Option>(),
-				FormId = 2,
-				Type = QuestionType.Open
-			},
-			new()
-			{
-				Text = "Test Question 2",
-				Options = new List<Option>
+				Form = new Form
 				{
-					new()
+					Title = "Test Form",
+					Questions = new List<Question>
 					{
-						Text = "Test Option 1"
+						new()
+						{
+							Text = "Test Question 1",
+							Options = new List<Option>(),
+							FormId = 0
+						},
+						new()
+						{
+							Text = "Test Question 2",
+							Options = new List<Option>
+							{
+								new()
+								{
+									Text = "Test Option 1"
+								},
+								new()
+								{
+									Text = "Test Option 2"
+								}
+							},
+							FormId = 0
+						}
 					},
-					new()
-					{
-						Text = "Test Option 2"
-					}
+					Status = FormStatus.Public,
+					OwnerId = "user012"
 				},
-				FormId = 2,
-				Type = QuestionType.MultipleOptions
-			}
-		},
 				Status = FormStatus.Public,
-				OwnerId = userId // Updated to use userId
+				QuestionTypes = new List<QuestionType>()
 			};
 
-			dbContext.Forms.Add(existingForm);
-			dbContext.SaveChanges();
+			controller.Create(existingForm, "Public", "Open,MultipleOptions");
 
 			var formViewModel = new FormViewModel
 			{
 				Form = new Form
 				{
+					Id = existingForm.Form.Id,
 					Title = "Updated Test Form",
 					Questions = new List<Question>
 					{
@@ -916,36 +919,34 @@ namespace FormFlow.Tests
 						{
 							Text = "Updated Test Question 1",
 							Options = new List<Option>(),
-							FormId = 0,
-							Type = QuestionType.Open
+							FormId = existingForm.Form.Id
 						},
 						new()
 						{
 							Text = "Updated Test Question 2",
 							Options = new List<Option>
-					{
-						new()
-						{
-							Text = "Updated Test Option 1"
-						},
-						new()
-						{
-							Text = "Updated Test Option 2"
+							{
+								new()
+								{
+									Text = "Updated Test Option 1"
+								},
+								new()
+								{
+									Text = "Updated Test Option 2"
+								}
+							},
+							FormId = existingForm.Form.Id
 						}
 					},
-					FormId = 2,
-					Type = QuestionType.MultipleOptions
-				}
-			},
 					Status = FormStatus.Public,
-					OwnerId = userId // Updated to use userId
+					OwnerId = "user012"
 				},
-				Status = FormStatus.Private,
+				Status = FormStatus.Public,
 				QuestionTypes = new List<QuestionType>()
 			};
 
 			// Act
-			var result = controller.Modify(formViewModel, "Private", "");
+			var result = controller.Modify(formViewModel, "Private", null);
 
 			// Assert
 			Assert.IsType<RedirectToActionResult>(result);
@@ -980,6 +981,36 @@ namespace FormFlow.Tests
 			Assert.NotNull(updatedOption2);
 
 			Assert.Equal(FormStatus.Private, updatedForm.Status);
+		}
+		[Fact]
+		public void FormHasResponses_ReturnsTrue_WhenFormHasResponses()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			// Create a new in-memory database context
+			using var dbContext = new AppDbContext(dbContextOptions);
+
+			// Create a sample form with responses
+			const int formId = 1;
+			var formResponses = new List<FormResponse>
+			{
+				new() { FormId = formId, Email = "test@email.1", Responses = new List<ResponseEntry> { new() { Answer = "a", QuestionId = 1} }},
+				new() { FormId = formId, Email = "test@email.2", Responses = new List<ResponseEntry> { new() { Answer = "ab", QuestionId = 2} }}
+			};
+			dbContext.FormResponses.AddRange(formResponses);
+			dbContext.SaveChanges();
+
+			// Create an instance of the controller
+			var controller = new FormController(dbContext);
+
+			// Act
+			var result = controller.FormHasResponses(formId);
+
+			// Assert
+			Assert.True(result);
 		}
 	}
 }
