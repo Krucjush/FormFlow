@@ -870,7 +870,6 @@ namespace FormFlow.Tests
 
 			var existingForm = new Form
 			{
-				Id = formId,
 				Title = "Test Form",
 				Questions = new List<Question>
 		{
@@ -956,18 +955,29 @@ namespace FormFlow.Tests
 
 			var updatedForm = dbContext.Forms.Find(formId);
 			Assert.NotNull(updatedForm);
-			Assert.Equal("Updated Test Form", updatedForm.Title); // Updated assertion
+			Assert.Equal("Updated Test Form", updatedForm.Title);
 
 			// Check the updated form's questions and their properties
-			var updatedQuestion1 = updatedForm.Questions.FirstOrDefault(q => q.Text == "Updated Test Question 1");
+			var updatedQuestion1 = updatedForm.Questions!.FirstOrDefault(q => q.Text == "Updated Test Question 1");
 			Assert.NotNull(updatedQuestion1);
 			Assert.Equal(QuestionType.Open, updatedQuestion1.Type);
 
-			var updatedQuestion2 = updatedForm.Questions.FirstOrDefault(q => q.Text == "Updated Test Question 2");
+			var updatedQuestion2 = updatedForm.Questions!.FirstOrDefault(q => q.Text == "Updated Test Question 2");
 			Assert.NotNull(updatedQuestion2);
 			Assert.Equal(QuestionType.MultipleOptions, updatedQuestion2.Type);
 
-			// Additional assertions for question options, if necessary
+			var updatedStatus = updatedForm.Status;
+			Assert.Equal(FormStatus.Private, updatedStatus);
+
+			var updatedOwner = updatedForm.OwnerId;
+			Assert.NotNull(updatedOwner);
+			Assert.Equal("user012", updatedOwner);
+
+			var updatedOption1 = updatedQuestion2.Options!.FirstOrDefault(q => q.Text == "Updated Test Option 1");
+			Assert.NotNull(updatedOption1);
+
+			var updatedOption2 = updatedQuestion2.Options!.FirstOrDefault(q => q.Text == "Updated Test Option 2");
+			Assert.NotNull(updatedOption2);
 
 			Assert.Equal(FormStatus.Private, updatedForm.Status);
 		}

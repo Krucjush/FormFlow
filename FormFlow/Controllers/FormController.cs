@@ -13,6 +13,7 @@ namespace FormFlow.Controllers
 	public class FormController : Controller
 	{
 		private readonly AppDbContext _dbContext;
+		public int FormId { get; set; }
 		[BindProperty] 
 		public FormViewModel? FormViewModel { get; set; }
 
@@ -96,7 +97,7 @@ namespace FormFlow.Controllers
 
 			var formDetails = new Form
 			{
-				Title = formViewModel.Form.Title,
+				Title = formViewModel.Form!.Title,
 				Questions = formViewModel.Form.Questions!.Select((q, index) => new Question
 				{
 					Text = q.Text,
@@ -129,6 +130,7 @@ namespace FormFlow.Controllers
 		[HttpGet]
 		public IActionResult Modify(int formId)
 		{
+			FormId = formId;
 			var form = _dbContext.Forms
 				.Include(f => f.Questions)!
 				.ThenInclude(q => q.Options)?
@@ -143,7 +145,7 @@ namespace FormFlow.Controllers
 			{
 				Form = new Form
 				{
-					Id = form.Id,
+					Id = formId,
 					Title = form.Title,
 					Questions = form.Questions!.Select(q => new Question
 					{
@@ -160,12 +162,17 @@ namespace FormFlow.Controllers
 				Status = form.Status,
 				QuestionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList()
 			};
+			ViewBag.FormHasResponses = FormHasResponses(formId);
 			return View(formViewModel);
 		}
 		[ValidateAntiForgeryToken]
 		[HttpPatch]
 		public IActionResult Modify(FormViewModel formViewModel, string status, string? type)
 		{
+			var currentForm = _dbContext.Forms
+				.Include(f => f.Questions)!
+				.ThenInclude(q => q.Options)?
+				.FirstOrDefault(f => f.Id == formViewModel.Form!.Id);
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -189,7 +196,7 @@ namespace FormFlow.Controllers
 
 			var formDetails = new Form
 			{
-				Id = formViewModel.Form!.Id,
+				Id = formViewModel.Form.Id,
 				Title = formViewModel.Form.Title,
 				Questions = formViewModel.Form.Questions!.Select((q, index) => new Question
 				{
@@ -208,6 +215,39 @@ namespace FormFlow.Controllers
 				return BadRequest("At least one option is required for a MultipleOptions question.");
 			}
 
+			if (FormHasResponses(formDetails.Id))
+			{
+				var newFormDetails = new Form
+				{
+					Title = formViewModel.Form.Title,
+					Questions = formViewModel.Form.Questions!.Select((q, index) => new Question
+					{
+						Id = q.Id,
+						Text = q.Text,
+						Options = q.Options != null
+							? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList()
+							: new List<Option>(),
+						FormId = 0,
+						Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff])
+					}).ToList(),
+					Status = Enum.Parse<FormStatus>(status),
+					OwnerId = idClaim.Value
+				};
+
+				_dbContext.Forms.Add(newFormDetails);
+				_dbContext.SaveChanges();
+
+				foreach (var question in newFormDetails.Questions)
+				{
+					question.FormId = newFormDetails.Id;
+				}
+
+				_dbContext.SaveChanges();
+
+				return RedirectToAction("Index");
+			}
+
+			_dbContext.Forms.Remove(currentForm!);
 			_dbContext.Forms.Update(formDetails);
 			_dbContext.SaveChanges();
 
@@ -219,6 +259,11 @@ namespace FormFlow.Controllers
 			_dbContext.SaveChanges();
 
 			return RedirectToAction("Index");
+		}
+
+		private bool FormHasResponses(int formId)
+		{
+			return _dbContext.FormResponses.Any(fr => fr.FormId == formId);
 		}
 
 		public IActionResult Remove(int formId)
