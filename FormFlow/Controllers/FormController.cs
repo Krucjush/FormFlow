@@ -261,7 +261,7 @@ namespace FormFlow.Controllers
 			return RedirectToAction("Index");
 		}
 
-		private bool FormHasResponses(int formId)
+		public bool FormHasResponses(int formId)
 		{
 			return _dbContext.FormResponses.Any(fr => fr.FormId == formId);
 		}
