@@ -22,7 +22,7 @@ namespace FormFlow.Controllers
 			_dbContext = dbContext;
 		}
 		[Authorize]
-		public IActionResult Index()
+		public IActionResult Index(string? errorMessage = null)
 		{
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
@@ -35,6 +35,8 @@ namespace FormFlow.Controllers
 			{
 				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(q => q.OwnerId == idClaim.Value)
 			};
+
+			ViewData["ErrorMessage"] = errorMessage;
 
 			return View(FormViewModel);
 		}
@@ -169,10 +171,7 @@ namespace FormFlow.Controllers
 		[HttpPatch]
 		public IActionResult Modify(FormViewModel formViewModel, string status, string? type)
 		{
-			var currentForm = _dbContext.Forms
-				.Include(f => f.Questions)!
-				.ThenInclude(q => q.Options)?
-				.FirstOrDefault(f => f.Id == formViewModel.Form!.Id);
+			
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -180,6 +179,11 @@ namespace FormFlow.Controllers
 			{
 				return Unauthorized();
 			}
+
+			var currentForm = _dbContext.Forms
+				.Include(f => f.Questions)!
+				.ThenInclude(q => q.Options)?
+				.FirstOrDefault(f => f.Id == formViewModel.Form!.Id);
 
 			if (formViewModel.Form?.Questions?.Count < 1)
 			{
@@ -268,7 +272,23 @@ namespace FormFlow.Controllers
 
 		public IActionResult Remove(int formId)
 		{
-			return View("Index");
+			var form = _dbContext.Forms.FirstOrDefault(f => f.Id == formId);
+
+			if (form == null)
+			{
+				return NotFound();
+			}
+
+			if (FormHasResponses(formId))
+			{
+				var errorMessage = "Cannot remove the form as it has associated responses.";
+				return RedirectToAction("Index", new { errorMessage });
+			}
+
+			_dbContext.Forms.Remove(form);
+			_dbContext.SaveChanges();
+
+			return RedirectToAction("Index");
 		}
 	}
 }
