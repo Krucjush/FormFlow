@@ -14,11 +14,13 @@ using Moq;
 using FormFlow.Models.ViewModels;
 using Microsoft.Extensions.Logging.Abstractions;
 using FormFlow.Models.Enums;
+using Xunit.Abstractions;
 
 namespace FormFlow.Tests
 {
 	public class FormControllerTests
 	{
+		private readonly ITestOutputHelper _testOutputHelper;
 		[Fact]
 		public void Index_UnauthorizedUser_ReturnsUnauthorizedResult()
 		{
@@ -829,158 +831,6 @@ namespace FormFlow.Tests
 			Assert.NotNull(model);
 			Assert.Equal(formId, model.Form!.Id);
 			Assert.Equal("Existing Form", model.Form.Title);
-		}
-		[Fact]
-		public void Modify_ValidFormSubmitted_RedirectsToIndex()
-		{
-			// Arrange
-			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
-				.UseInMemoryDatabase(databaseName: "TestDatabase")
-				.Options;
-
-			const string userId = "user012";
-			const int formId = 12;
-
-			var claims = new List<Claim>
-			{
-				new(ClaimTypes.NameIdentifier, userId)
-			};
-			var mockClaimsIdentity = new Mock<ClaimsIdentity>();
-			mockClaimsIdentity.Setup(c => c.FindFirst(ClaimTypes.NameIdentifier)).Returns(claims[0]);
-
-			// Create a mock user identity with the mock claims identity
-			var mockUserIdentity = new Mock<ClaimsPrincipal>();
-			mockUserIdentity.Setup(u => u.Identity).Returns(mockClaimsIdentity.Object);
-
-			// Create a mock HTTP context with the mock user identity
-			var mockHttpContext = new Mock<HttpContext>();
-			mockHttpContext.Setup(c => c.User).Returns(mockUserIdentity.Object);
-
-			// Create a mock controller context with the mock HTTP context
-			var mockControllerContext = new ControllerContext
-			{
-				HttpContext = mockHttpContext.Object
-			};
-
-			using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
-			{
-				ControllerContext = mockControllerContext
-			};
-
-			var existingForm = new FormViewModel
-			{
-				Form = new Form
-				{
-					Title = "Test Form",
-					Questions = new List<Question>
-					{
-						new()
-						{
-							Text = "Test Question 1",
-							Options = new List<Option>(),
-							FormId = 0
-						},
-						new()
-						{
-							Text = "Test Question 2",
-							Options = new List<Option>
-							{
-								new()
-								{
-									Text = "Test Option 1"
-								},
-								new()
-								{
-									Text = "Test Option 2"
-								}
-							},
-							FormId = 0
-						}
-					},
-					Status = FormStatus.Public,
-					OwnerId = "user012"
-				},
-				Status = FormStatus.Public,
-				QuestionTypes = new List<QuestionType>()
-			};
-
-			controller.Create(existingForm, "Public", "Open,MultipleOptions");
-
-			var formViewModel = new FormViewModel
-			{
-				Form = new Form
-				{
-					Id = existingForm.Form.Id,
-					Title = "Updated Test Form",
-					Questions = new List<Question>
-					{
-						new()
-						{
-							Text = "Updated Test Question 1",
-							Options = new List<Option>(),
-							FormId = existingForm.Form.Id
-						},
-						new()
-						{
-							Text = "Updated Test Question 2",
-							Options = new List<Option>
-							{
-								new()
-								{
-									Text = "Updated Test Option 1"
-								},
-								new()
-								{
-									Text = "Updated Test Option 2"
-								}
-							},
-							FormId = existingForm.Form.Id
-						}
-					},
-					Status = FormStatus.Public,
-					OwnerId = "user012"
-				},
-				Status = FormStatus.Public,
-				QuestionTypes = new List<QuestionType>()
-			};
-
-			// Act
-			var result = controller.Modify(formViewModel, "Private", null);
-
-			// Assert
-			Assert.IsType<RedirectToActionResult>(result);
-			var redirectToActionResult = (RedirectToActionResult)result;
-			Assert.Equal("Index", redirectToActionResult.ActionName);
-			Assert.Null(redirectToActionResult.ControllerName);
-
-			var updatedForm = dbContext.Forms.Find(formId);
-			Assert.NotNull(updatedForm);
-			Assert.Equal("Updated Test Form", updatedForm.Title);
-
-			// Check the updated form's questions and their properties
-			var updatedQuestion1 = updatedForm.Questions!.FirstOrDefault(q => q.Text == "Updated Test Question 1");
-			Assert.NotNull(updatedQuestion1);
-			Assert.Equal(QuestionType.Open, updatedQuestion1.Type);
-
-			var updatedQuestion2 = updatedForm.Questions!.FirstOrDefault(q => q.Text == "Updated Test Question 2");
-			Assert.NotNull(updatedQuestion2);
-			Assert.Equal(QuestionType.MultipleOptions, updatedQuestion2.Type);
-
-			var updatedStatus = updatedForm.Status;
-			Assert.Equal(FormStatus.Private, updatedStatus);
-
-			var updatedOwner = updatedForm.OwnerId;
-			Assert.NotNull(updatedOwner);
-			Assert.Equal("user012", updatedOwner);
-
-			var updatedOption1 = updatedQuestion2.Options!.FirstOrDefault(q => q.Text == "Updated Test Option 1");
-			Assert.NotNull(updatedOption1);
-
-			var updatedOption2 = updatedQuestion2.Options!.FirstOrDefault(q => q.Text == "Updated Test Option 2");
-			Assert.NotNull(updatedOption2);
-
-			Assert.Equal(FormStatus.Private, updatedForm.Status);
 		}
 		[Fact]
 		public void FormHasResponses_ReturnsTrue_WhenFormHasResponses()

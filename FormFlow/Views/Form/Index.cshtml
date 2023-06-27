@@ -8,6 +8,16 @@
 			<hr/>
 		</div>
 	</div>
+	@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+	{
+		<div class="row">
+			<div class="col-12">
+				<div class="alert alert-danger" role="alert">
+					@ViewData["ErrorMessage"]
+				</div>
+			</div>
+		</div>
+	}
 	@if (!Model.ListForms.Any())
 	{
 		<div class="row">
@@ -26,7 +36,7 @@
 				</div>
 				<div class="col-4 my-auto text-center">
 					<a asp-action="Modify" asp-route-formId="@form.Id" class="btn btn-warning">Modify</a>
-					<a asp-action="Remove" asp-route-formId="@form.Id" class="btn btn-warning">Remove</a>
+					<a asp-controller="Form" asp-action="Remove" asp-route-formId="@form.Id" class="btn btn-warning">Remove</a>
 				</div>
 			</div>
 			<hr />
