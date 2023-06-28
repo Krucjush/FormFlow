@@ -5,7 +5,6 @@ using FormFlow.Models.Enums;
 using FormFlow.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.EntityFrameworkCore;
 
 namespace FormFlow.Controllers
@@ -135,7 +134,7 @@ namespace FormFlow.Controllers
 			FormId = formId;
 			var form = _dbContext.Forms
 				.Include(f => f.Questions)!
-				.ThenInclude(q => q.Options)?
+				.ThenInclude(q => q.Options)
 				.FirstOrDefault(f => f.Id == formId);
 
 			if (form == null)
@@ -182,7 +181,7 @@ namespace FormFlow.Controllers
 
 			var currentForm = _dbContext.Forms
 				.Include(f => f.Questions)!
-				.ThenInclude(q => q.Options)?
+				.ThenInclude(q => q.Options)
 				.FirstOrDefault(f => f.Id == formViewModel.Form!.Id);
 
 			if (formViewModel.Form?.Questions?.Count < 1)
@@ -281,7 +280,7 @@ namespace FormFlow.Controllers
 
 			if (FormHasResponses(formId))
 			{
-				var errorMessage = "Cannot remove the form as it has associated responses.";
+				const string errorMessage = "Cannot remove the form as it has associated responses.";
 				return RedirectToAction("Index", new { errorMessage });
 			}
 
