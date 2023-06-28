@@ -862,5 +862,85 @@ namespace FormFlow.Tests
 			// Assert
 			Assert.True(result);
 		}
+		[Fact]
+		public void Remove_FormNotFound_ReturnsNotFound()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext);
+
+			const int nonExistingFormId = 123; // Assuming this form ID does not exist
+
+			// Act
+			var result = controller.Remove(nonExistingFormId);
+
+			// Assert
+			Assert.IsType<NotFoundResult>(result);
+		}
+		[Fact]
+		public void Remove_FormHasResponses_ReturnsErrorMessageAndRedirectToIndex()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext);
+
+			const int formId = 1; // Assuming this form ID has associated responses
+
+			// Add a dummy response to simulate associated responses
+			dbContext.Forms.Add(new Form { Id = formId, Title = "Test"});
+			dbContext.FormResponses.Add(new FormResponse { FormId = formId, Email = "test@mail.com"});
+			dbContext.SaveChanges();
+
+			// Act
+			var result = controller.Remove(formId);
+
+			// Assert
+			var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+			Assert.Equal("Index", redirectToActionResult.ActionName);
+			Assert.Null(redirectToActionResult.ControllerName);
+
+			var routeValues = redirectToActionResult.RouteValues;
+			Assert.NotNull(routeValues);
+			Assert.Contains("errorMessage", routeValues.Keys);
+			Assert.Equal("Cannot remove the form as it has associated responses.", routeValues["errorMessage"]);
+		}
+		[Fact]
+		public void Remove_FormExistsNoResponses_RemovesFormAndRedirectsToIndex()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext);
+
+			const int formId = 1; // Assuming this form ID exists and has no associated responses
+
+			// Add the form to the Forms table
+			var form = new Form { Id = formId, Title = "test"};
+			dbContext.Forms.Add(form);
+			dbContext.SaveChanges();
+
+			// Act
+			var result = controller.Remove(formId);
+
+			// Assert
+			var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+			Assert.Equal("Index", redirectToActionResult.ActionName);
+			Assert.Null(redirectToActionResult.ControllerName);
+
+			// Check that the form was removed from the Forms table
+			var removedForm = dbContext.Forms.FirstOrDefault(f => f.Id == formId);
+			Assert.Null(removedForm);
+		}
 	}
 }
