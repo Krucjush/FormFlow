@@ -4,6 +4,7 @@ using FormFlow.Models;
 using FormFlow.Models.Enums;
 using FormFlow.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,13 +13,17 @@ namespace FormFlow.Controllers
 	public class FormController : Controller
 	{
 		private readonly AppDbContext _dbContext;
+		private readonly FormFlowContext _formFlowContext;
+		private readonly UserManager<User> _userManager;
 		public int FormId { get; set; }
 		[BindProperty] 
 		public FormViewModel? FormViewModel { get; set; }
 
-		public FormController(AppDbContext dbContext)
+		public FormController(AppDbContext dbContext, FormFlowContext formFlowContext, UserManager<User> userManager)
 		{
 			_dbContext = dbContext;
+			_formFlowContext = formFlowContext;
+			_userManager = userManager;
 		}
 		[Authorize]
 		public IActionResult Index(string? errorMessage = null)
@@ -40,15 +45,21 @@ namespace FormFlow.Controllers
 			return View(FormViewModel);
 		}
 		[HttpGet]
-		public IActionResult Display(int id)
+		public async Task<IActionResult> Display(int id)
 		{
 			var form = _dbContext.Forms.Include(f => f.Questions!).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
+			var claims = User.Identity as ClaimsIdentity;
+			var user = _formFlowContext.Users.FirstOrDefault(u => u.Email == claims!.Name);
+			var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
 
 			if (form == null)
 			{
 				return NotFound();
 			}
-			return View(form);
+
+			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed)) return View(form);
+			const string errorMessage = "You don't have permission to contribute to this form.";
+			return RedirectToAction("Index", "Home", new { errorMessage });
 		}
 		[Authorize]
 		[HttpGet]
@@ -288,6 +299,44 @@ namespace FormFlow.Controllers
 			_dbContext.SaveChanges();
 
 			return RedirectToAction("Index");
+		}
+		private bool CanSubmitResponse(Form form, string userEmail, bool isAuthenticated)
+		{
+			switch (form.Status)
+			{
+				case FormStatus.Public:
+					return true;
+
+				case FormStatus.Private:
+					return isAuthenticated;
+
+				case FormStatus.Domain:
+					if (string.IsNullOrEmpty(userEmail))
+					{
+						return false;
+					}
+
+					var formDomain = GetFromDomain(form);
+					var userEmailDomain = GetUserEmailDomain(userEmail);
+					return formDomain.Equals(userEmailDomain, StringComparison.OrdinalIgnoreCase);
+				default:
+					return false;
+			}
+		}
+
+		private string GetFromDomain(Form form)
+		{
+			var owner = _formFlowContext.Users.FirstOrDefault(u => u.Id == form.OwnerId);
+			if (owner == null) return string.Empty;
+			var emailAddress = owner!.Email;
+			var domain = emailAddress!.Split('@')[1];
+			return domain;
+		}
+
+		private static string GetUserEmailDomain(string userEmail)
+		{
+			var emailParts = userEmail.Split('@');
+			return emailParts.Length > 1 ? emailParts[1] : string.Empty;
 		}
 	}
 }
