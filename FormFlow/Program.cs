@@ -14,7 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 	options.UseSqlite(builder.Configuration.GetConnectionString("Default"));
 });
 
-builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<FormFlowContext>();
+builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<FormFlowContext>();
 
 builder.Services.AddDbContext<FormFlowContext>(options =>
 {
