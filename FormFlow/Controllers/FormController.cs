@@ -50,7 +50,7 @@ namespace FormFlow.Controllers
 			var form = _dbContext.Forms.Include(f => f.Questions!).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
 			var claims = User.Identity as ClaimsIdentity;
 			var user = _formFlowContext.Users.FirstOrDefault(u => u.Email == claims!.Name);
-			var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
+			var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user!);
 
 			if (form == null)
 			{
@@ -58,7 +58,15 @@ namespace FormFlow.Controllers
 			}
 
 			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed)) return View(form);
-			const string errorMessage = "You don't have permission to contribute to this form.";
+			var errorMessage = $"You don't have permission to contribute to this form.\nForm Status is {form.Status}.\n";
+			if (form.Status == FormStatus.Private)
+			{
+				errorMessage += "Please confirm your email to contribute to this form.";
+			}
+			else if (form.Status == FormStatus.Domain)
+			{
+				errorMessage += $"Form domain is `{GetFromDomain(form)}`.\nYour domain is `{GetUserEmailDomain(user!.Email!)}`";
+			}
 			return RedirectToAction("Index", "Home", new { errorMessage });
 		}
 		[Authorize]
