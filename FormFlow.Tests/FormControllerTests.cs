@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,12 +16,22 @@ using FormFlow.Models.ViewModels;
 using Microsoft.Extensions.Logging.Abstractions;
 using FormFlow.Models.Enums;
 using Xunit.Abstractions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.SqlServer.Server;
+using System.Diagnostics;
 
 namespace FormFlow.Tests
 {
 	public class FormControllerTests
 	{
 		private readonly ITestOutputHelper _testOutputHelper;
+
+		public FormControllerTests(ITestOutputHelper testOutputHelper)
+		{
+			_testOutputHelper = testOutputHelper;
+		}
 		[Fact]
 		public void Index_UnauthorizedUser_ReturnsUnauthorizedResult()
 		{
@@ -47,7 +58,7 @@ namespace FormFlow.Tests
 			};
 
 			using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -100,7 +111,7 @@ namespace FormFlow.Tests
 			await dbContext.Forms.AddRangeAsync(forms);
 			await dbContext.SaveChangesAsync();
 
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -145,7 +156,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -203,7 +214,7 @@ namespace FormFlow.Tests
 			dbContext.Forms.AddRange(forms);
 			await dbContext.SaveChangesAsync();
 
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -244,7 +255,7 @@ namespace FormFlow.Tests
 			};
 
 			using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -287,7 +298,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -331,7 +342,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -422,7 +433,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -479,7 +490,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -550,7 +561,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -614,7 +625,7 @@ namespace FormFlow.Tests
 			};
 
 			using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -636,7 +647,7 @@ namespace FormFlow.Tests
 			const int formId = 1; // ID of the non-existent form
 
 			using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext);
+			var controller = new FormController(dbContext, null, null);
 
 			// Act
 			var result = controller.Modify(formId);
@@ -674,7 +685,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -731,7 +742,7 @@ namespace FormFlow.Tests
 			};
 
 			await using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -804,7 +815,7 @@ namespace FormFlow.Tests
 			};
 
 			using var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext)
+			var controller = new FormController(dbContext, null, null)
 			{
 				ControllerContext = mockControllerContext
 			};
@@ -854,7 +865,7 @@ namespace FormFlow.Tests
 			dbContext.SaveChanges();
 
 			// Create an instance of the controller
-			var controller = new FormController(dbContext);
+			var controller = new FormController(dbContext, null, null);
 
 			// Act
 			var result = controller.FormHasResponses(formId);
@@ -871,7 +882,7 @@ namespace FormFlow.Tests
 				.Options;
 
 			var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext);
+			var controller = new FormController(dbContext, null, null);
 
 			const int nonExistingFormId = 123; // Assuming this form ID does not exist
 
@@ -890,7 +901,7 @@ namespace FormFlow.Tests
 				.Options;
 
 			var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext);
+			var controller = new FormController(dbContext, null, null);
 
 			const int formId = 1; // Assuming this form ID has associated responses
 
@@ -921,7 +932,7 @@ namespace FormFlow.Tests
 				.Options;
 
 			var dbContext = new AppDbContext(dbContextOptions);
-			var controller = new FormController(dbContext);
+			var controller = new FormController(dbContext, null, null);
 
 			const int formId = 1; // Assuming this form ID exists and has no associated responses
 
@@ -941,6 +952,444 @@ namespace FormFlow.Tests
 			// Check that the form was removed from the Forms table
 			var removedForm = dbContext.Forms.FirstOrDefault(f => f.Id == formId);
 			Assert.Null(removedForm);
+		}
+		[Fact]
+		public void CanSubmitResponse_PublicForm_ReturnsTrue()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var form = new Form { Title = "test", Status = FormStatus.Public };
+			const string userEmail = "test@example.com";
+			const bool isAuthenticated = false;
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext, null, null);
+
+			// Act
+			var result = controller.CanSubmitResponse(form, userEmail, isAuthenticated);
+
+			// Assert
+			Assert.True(result);
+		}
+		[Fact]
+		public void CanSubmitResponse_PrivateFormWithAuthenticatedUser_ReturnsTrue()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var form = new Form { Title = "test", Status = FormStatus.Private };
+			const string userEmail = "test@example.com";
+			const bool isAuthenticated = true; // Set the user as authenticated
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext, null, null);
+
+			// Act
+			var result = controller.CanSubmitResponse(form, userEmail, isAuthenticated);
+
+			// Assert
+			Assert.True(result);
+		}
+		[Fact]
+		public void CanSubmitResponse_PrivateFormWithUnauthenticatedUser_ReturnsFalse()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var form = new Form { Title = "test", Status = FormStatus.Private };
+			const string userEmail = "test@example.com";
+			const bool isAuthenticated = false; // Set the user as unauthenticated
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext, null, null);
+
+			// Act
+			var result = controller.CanSubmitResponse(form, userEmail, isAuthenticated);
+
+			// Assert
+			Assert.False(result);
+		}
+		[Fact]
+		public void CanSubmitResponse_DomainFormWithEmptyUserEmail_ReturnsFalse()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var form = new Form { Title = "test", Status = FormStatus.Private };
+			const string userEmail = "";
+			const bool isAuthenticated = false;
+
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext, null, null);
+
+			// Act
+			var result = controller.CanSubmitResponse(form, userEmail, isAuthenticated);
+
+			// Assert
+			Assert.False(result);
+		}
+		[Fact]
+		public void CanSubmitResponse_DomainFormWithDomainMismatch_ReturnsFalse()
+		{
+			// Arrange
+			var form = new Form { Status = FormStatus.Domain, OwnerId = "user024" };
+			const string userEmail = "test@example.com";
+			const bool isAuthenticated = false;
+
+			var mockController = new Mock<FormController>(null, null, null);
+			var classUnderTest = mockController.Object;
+
+			// Mock the method calls for GetFromDomain and GetUserEmailDomain
+			mockController.Setup(c => c.GetFromDomain(It.IsAny<Form>())).Returns("example.com");
+			mockController.Setup(c => c.GetUserEmailDomain(It.IsAny<string>())).Returns("different.com");
+
+			// Act
+			var result = classUnderTest.CanSubmitResponse(form, userEmail, isAuthenticated);
+
+			// Assert
+			Assert.False(result);
+		}
+		[Fact]
+		public void CanSubmitResponse_DomainFormWithDomainMatch_ReturnsTrue()
+		{
+			// Arrange
+			var form = new Form { Status = FormStatus.Domain, OwnerId = "user025" };
+			const string ownerEmail = "owner@example.com";
+			const string customerEmail = "test@example.com";
+			const bool isAuthenticated = false;
+
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+			var formFlowContextOptions = new DbContextOptionsBuilder<FormFlowContext>()
+				.UseInMemoryDatabase(databaseName: "TestIdentity")
+				.Options;
+
+			using var dbContext = new AppDbContext(dbContextOptions);
+			using var formFlowContext = new FormFlowContext(formFlowContextOptions);
+			var userStore = new UserStore<User>(formFlowContext);
+			var identityOptions = new IdentityOptions();
+			var optionsAccessor = Options.Create(identityOptions);
+			var userManager = new UserManager<User>(
+				userStore, optionsAccessor, null, null, null, null, null, null, null);
+			var controller = new FormController(dbContext, formFlowContext, userManager);
+
+			// Add the owner to the user database
+			var owner = new User
+			{
+				Id = form.OwnerId,
+				UserName = ownerEmail,
+				Email = ownerEmail
+			};
+			formFlowContext.Users.Add(owner);
+			formFlowContext.SaveChanges();
+
+			// Act
+			var result = controller.CanSubmitResponse(form, customerEmail, isAuthenticated);
+
+			// Assert
+			Assert.True(result);
+		}
+		[Fact]
+		public void GetFromDomain_OwnerIsNull_ReturnsEmptyString()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<FormFlowContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			var form = new Form { OwnerId = "nonexistentuser" };
+
+			using var dbContext = new FormFlowContext(dbContextOptions);
+			var controller = new FormController(null, dbContext, null);
+
+			// Act
+			var result = controller.GetFromDomain(form);
+
+			// Assert
+			Assert.Equal(string.Empty, result);
+		}
+		[Fact]
+		public void GetFromDomain_UserExists_ReturnsCorrectDomain()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<FormFlowContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			const string ownerId = "user027";
+			const string emailAddress = "test@example.com";
+			const string expectedDomain = "example.com";
+
+			var form = new Form { OwnerId = ownerId };
+			var user = new User { Id = ownerId, Email = emailAddress };
+
+			using var dbContext = new FormFlowContext(dbContextOptions);
+			dbContext.Users.Add(user);
+			dbContext.SaveChanges();
+
+			var controller = new FormController(null, dbContext, null);
+
+			// Act
+			var result = controller.GetFromDomain(form);
+
+			// Assert
+			Assert.Equal(expectedDomain, result);
+		}
+		[Fact]
+		public void GetUserEmailDomain_EmailShorterThanOne_ReturnsEmptyString()
+		{
+			// Arrange
+			const string email = "example@";
+			var expectedDomain = string.Empty;
+
+			var controller = new FormController(null, null, null);
+
+			// Act
+			var result = controller.GetUserEmailDomain(email);
+
+			// Assert
+			Assert.Equal(expectedDomain, result);
+		}
+		[Fact]
+		public void GetUserEmailDomain_CorrectEmail_ReturnsDomain()
+		{
+			// Arrange
+			const string email = "test@example.com";
+			const string expectedDomain = "example.com";
+
+			var controller = new FormController(null, null, null);
+
+			// Act
+			var result = controller.GetUserEmailDomain(email);
+
+			// Assert
+			Assert.Equal(expectedDomain, result);
+		}
+		[Fact]
+		public async Task Display_FormIsNull_ReturnsNotFoundResult()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			const int formId = 123; // Provide an existing form ID
+			var dbContext = new AppDbContext(dbContextOptions);
+			var controller = new FormController(dbContext, null, null);
+
+			// Act
+			var result = await controller.Display(formId);
+
+			// Assert
+			Assert.IsType<NotFoundResult>(result);
+		}
+		[Fact]
+		public async Task Display_CanSubmitResponse_ReturnsViewResult()
+		{
+			// Arrange
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+			var formFlowContextOptions = new DbContextOptionsBuilder<FormFlowContext>()
+				.UseInMemoryDatabase(databaseName: "TestIdentity")
+				.Options;
+
+			const int formId = 123; // Provide an existing form ID
+			await using var dbContext = new AppDbContext(dbContextOptions);
+			await using var formFlowContext = new FormFlowContext(formFlowContextOptions);
+			var userStore = new UserStore<User>(formFlowContext);
+			var identityOptions = new IdentityOptions();
+			var optionsAccessor = Options.Create(identityOptions);
+			var userManager = new UserManager<User>(
+				userStore, optionsAccessor, null, null, null, null, null, null, null);
+			var controller = new FormController(dbContext, formFlowContext, userManager);
+
+			// Set the User property manually for testing purposes
+			var claims = new[]
+			{
+				new Claim(ClaimTypes.NameIdentifier, "user031"),
+				new Claim(ClaimTypes.Name, "user031.example.com"),
+				new Claim(ClaimTypes.Email, "user031.example.com")
+			};
+			var identity = new ClaimsIdentity(claims, "TestAuth");
+			var claimsPrincipal = new ClaimsPrincipal(identity);
+			controller.ControllerContext = new ControllerContext
+			{
+				HttpContext = new DefaultHttpContext
+				{
+					User = claimsPrincipal
+				}
+			};
+
+			var user = new User
+			{
+				Id = "user031",
+				UserName = "user031.example.com",
+				Email = "user031.example.com",
+			};
+			formFlowContext.Users.Add(user);
+			await formFlowContext.SaveChangesAsync();
+			var form = new Form
+			{
+				Id = formId,
+				Title = "Test Form"
+			};
+			dbContext.Forms.Add(form);
+			await dbContext.SaveChangesAsync();
+
+			// Act
+			var result = await controller.Display(formId);
+
+			// Assert
+			Assert.IsType<ViewResult>(result);
+		}
+		[Fact]
+		public async Task Display_PrivateFormWithoutPermission_RedirectsToHomeIndexWithErrorMessage()
+		{
+			// Arrange
+			var form = new Form { Title = "Test Form", Status = FormStatus.Private, OwnerId = "user032" };
+			const string userEmail = "test@example.com";
+			const string expectedErrorMessage = "You don't have permission to contribute to this form.\nForm Status is Private.\nPlease confirm your email to contribute to this form.";
+
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+			var formFlowContextOptions = new DbContextOptionsBuilder<FormFlowContext>()
+				.UseInMemoryDatabase(databaseName: "TestIdentity")
+				.Options;
+
+			await using var dbContext = new AppDbContext(dbContextOptions);
+			await using var formFlowContext = new FormFlowContext(formFlowContextOptions);
+			var userStore = new UserStore<User>(formFlowContext);
+			var identityOptions = new IdentityOptions();
+			var optionsAccessor = Options.Create(identityOptions);
+			var userManager = new UserManager<User>(
+				userStore, optionsAccessor, null, null, null, null, null, null, null);
+
+			var claims = new List<Claim>
+			{
+				new(ClaimTypes.Name, userEmail)
+			};
+			var identity = new ClaimsIdentity(claims);
+			var user = new ClaimsPrincipal(identity);
+
+			var controller = new FormController(dbContext, formFlowContext, userManager)
+			{
+				ControllerContext = new ControllerContext
+				{
+					HttpContext = new DefaultHttpContext { User = user }
+				}
+			};
+
+			// Add the owner to the user database
+			var owner = new User
+			{
+				Id = form.OwnerId,
+				UserName = "owner@example.com",
+				Email = "owner@example.com"
+			};
+			formFlowContext.Users.Add(owner);
+			await formFlowContext.SaveChangesAsync();
+
+			var formUser = new User
+			{
+				Id = "user032a",
+				UserName = userEmail,
+				Email = userEmail
+			};
+			formFlowContext.Users.Add(formUser);
+			await formFlowContext.SaveChangesAsync();
+
+			dbContext.Forms.Add(form);
+			await dbContext.SaveChangesAsync();
+
+			// Act
+			var result = await controller.Display(1);
+
+			// Assert
+			var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+			Assert.Equal("Index", redirectResult.ActionName);
+			Assert.Equal("Home", redirectResult.ControllerName);
+			Assert.Equal(expectedErrorMessage, redirectResult.RouteValues["errorMessage"]);
+		}
+		[Fact]
+		public async Task Display_DomainFormWithoutPermission_RedirectsToHomeIndexWithErrorMessage()
+		{
+			// Arrange
+			var form = new Form { Title = "Test Form", Status = FormStatus.Domain, OwnerId = "user033" };
+			const string userEmail = "test@different.com";
+			const string expectedErrorMessage = "You don't have permission to contribute to this form.\nForm Status is Domain.\nForm domain is `example.com`.\nYour domain is `different.com`.";
+
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+			var formFlowContextOptions = new DbContextOptionsBuilder<FormFlowContext>()
+				.UseInMemoryDatabase(databaseName: "TestIdentity")
+				.Options;
+
+			await using var dbContext = new AppDbContext(dbContextOptions);
+			await using var formFlowContext = new FormFlowContext(formFlowContextOptions);
+			var userStore = new UserStore<User>(formFlowContext);
+			var identityOptions = new IdentityOptions();
+			var optionsAccessor = Options.Create(identityOptions);
+			var userManager = new UserManager<User>(
+				userStore, optionsAccessor, null, null, null, null, null, null, null);
+
+			var claims = new List<Claim>
+			{
+				new(ClaimTypes.Name, userEmail)
+			};
+			var identity = new ClaimsIdentity(claims);
+			var user = new ClaimsPrincipal(identity);
+
+			var controller = new FormController(dbContext, formFlowContext, userManager)
+			{
+				ControllerContext = new ControllerContext
+				{
+					HttpContext = new DefaultHttpContext { User = user }
+				}
+			};
+
+			// Add the owner to the user database
+			var owner = new User
+			{
+				Id = form.OwnerId,
+				UserName = "owner@example.com",
+				Email = "owner@example.com"
+			};
+			formFlowContext.Users.Add(owner);
+			await formFlowContext.SaveChangesAsync();
+
+			var formUser = new User
+			{
+				Id = "user032a",
+				UserName = userEmail,
+				Email = userEmail
+			};
+			formFlowContext.Users.Add(formUser);
+			await formFlowContext.SaveChangesAsync();
+
+			dbContext.Forms.Add(form);
+			await dbContext.SaveChangesAsync();
+
+			// Act
+			var result = await controller.Display(1);
+
+			// Assert
+			var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+			Assert.Equal("Index", redirectResult.ActionName);
+			Assert.Equal("Home", redirectResult.ControllerName);
+			Assert.Equal(expectedErrorMessage, redirectResult.RouteValues["errorMessage"]);
 		}
 	}
 }

@@ -12,14 +12,14 @@ namespace FormFlow.Controllers
 {
 	public class FormController : Controller
 	{
-		private readonly AppDbContext _dbContext;
-		private readonly FormFlowContext _formFlowContext;
-		private readonly UserManager<User> _userManager;
+		private readonly AppDbContext? _dbContext;
+		private readonly FormFlowContext? _formFlowContext;
+		private readonly UserManager<User>? _userManager;
 		public int FormId { get; set; }
 		[BindProperty] 
 		public FormViewModel? FormViewModel { get; set; }
 
-		public FormController(AppDbContext dbContext, FormFlowContext formFlowContext, UserManager<User> userManager)
+		public FormController(AppDbContext? dbContext, FormFlowContext? formFlowContext, UserManager<User>? userManager)
 		{
 			_dbContext = dbContext;
 			_formFlowContext = formFlowContext;
@@ -37,7 +37,7 @@ namespace FormFlow.Controllers
 
 			FormViewModel = new FormViewModel
 			{
-				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(q => q.OwnerId == idClaim.Value)
+				ListForms = _dbContext!.Forms.Include(f => f.Questions).Where(q => q.OwnerId == idClaim.Value)
 			};
 
 			ViewData["ErrorMessage"] = errorMessage;
@@ -47,25 +47,27 @@ namespace FormFlow.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Display(int id)
 		{
-			var form = _dbContext.Forms.Include(f => f.Questions!).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
-			var claims = User.Identity as ClaimsIdentity;
-			var user = _formFlowContext.Users.FirstOrDefault(u => u.Email == claims!.Name);
-			var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user!);
+			var form = _dbContext!.Forms.Include(f => f.Questions!).ThenInclude(q => q.Options).FirstOrDefault(f => f.Id == id);
 
 			if (form == null)
 			{
 				return NotFound();
 			}
 
+			var claims = User.Identity as ClaimsIdentity;
+			var user = _formFlowContext!.Users.FirstOrDefault(u => u.Email == claims!.Name);
+			var isEmailConfirmed = await _userManager!.IsEmailConfirmedAsync(user!);
+
 			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed)) return View(form);
 			var errorMessage = $"You don't have permission to contribute to this form.\nForm Status is {form.Status}.\n";
-			if (form.Status == FormStatus.Private)
+			switch (form.Status)
 			{
-				errorMessage += "Please confirm your email to contribute to this form.";
-			}
-			else if (form.Status == FormStatus.Domain)
-			{
-				errorMessage += $"Form domain is `{GetFromDomain(form)}`.\nYour domain is `{GetUserEmailDomain(user!.Email!)}`";
+				case FormStatus.Private:
+					errorMessage += "Please confirm your email to contribute to this form.";
+					break;
+				case FormStatus.Domain:
+					errorMessage += $"Form domain is `{GetFromDomain(form)}`.\nYour domain is `{GetUserEmailDomain(user!.Email!)}`.";
+					break;
 			}
 			return RedirectToAction("Index", "Home", new { errorMessage });
 		}
@@ -82,7 +84,7 @@ namespace FormFlow.Controllers
 
 			FormViewModel ??= new FormViewModel
 			{
-				ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList(),
+				ListForms = _dbContext!.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList(),
 				Form = new Form
 				{
 					Questions = new List<Question>()
@@ -111,7 +113,7 @@ namespace FormFlow.Controllers
 				return BadRequest("At lest one question is required.");
 			}
 
-			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
+			formViewModel.ListForms = _dbContext!.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 			
 			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
 
@@ -151,7 +153,7 @@ namespace FormFlow.Controllers
 		public IActionResult Modify(int formId)
 		{
 			FormId = formId;
-			var form = _dbContext.Forms
+			var form = _dbContext!.Forms
 				.Include(f => f.Questions)!
 				.ThenInclude(q => q.Options)
 				.FirstOrDefault(f => f.Id == formId);
@@ -198,7 +200,7 @@ namespace FormFlow.Controllers
 				return Unauthorized();
 			}
 
-			var currentForm = _dbContext.Forms
+			var currentForm = _dbContext!.Forms
 				.Include(f => f.Questions)!
 				.ThenInclude(q => q.Options)
 				.FirstOrDefault(f => f.Id == formViewModel.Form!.Id);
@@ -285,12 +287,12 @@ namespace FormFlow.Controllers
 
 		public bool FormHasResponses(int formId)
 		{
-			return _dbContext.FormResponses.Any(fr => fr.FormId == formId);
+			return _dbContext!.FormResponses.Any(fr => fr.FormId == formId);
 		}
 
 		public IActionResult Remove(int formId)
 		{
-			var form = _dbContext.Forms.FirstOrDefault(f => f.Id == formId);
+			var form = _dbContext!.Forms.FirstOrDefault(f => f.Id == formId);
 
 			if (form == null)
 			{
@@ -308,7 +310,7 @@ namespace FormFlow.Controllers
 
 			return RedirectToAction("Index");
 		}
-		private bool CanSubmitResponse(Form form, string userEmail, bool isAuthenticated)
+		public virtual bool CanSubmitResponse(Form form, string userEmail, bool isAuthenticated)
 		{
 			switch (form.Status)
 			{
@@ -332,16 +334,16 @@ namespace FormFlow.Controllers
 			}
 		}
 
-		private string GetFromDomain(Form form)
+		public virtual string GetFromDomain(Form form)
 		{
-			var owner = _formFlowContext.Users.FirstOrDefault(u => u.Id == form.OwnerId);
+			var owner = _formFlowContext!.Users.FirstOrDefault(u => u.Id == form.OwnerId);
 			if (owner == null) return string.Empty;
-			var emailAddress = owner!.Email;
+			var emailAddress = owner.Email;
 			var domain = emailAddress!.Split('@')[1];
 			return domain;
 		}
 
-		private static string GetUserEmailDomain(string userEmail)
+		public virtual string GetUserEmailDomain(string userEmail)
 		{
 			var emailParts = userEmail.Split('@');
 			return emailParts.Length > 1 ? emailParts[1] : string.Empty;
