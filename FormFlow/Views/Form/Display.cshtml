@@ -1,32 +1,52 @@
-﻿@model Form
+﻿@using FormFlow.Models.Enums
+@model FormFlow.Models.ViewModels.FormDisplayViewModel
 
 @{
 	ViewData["Title"] = "Display Form";
 }
 
-<h2>Form: @Model.Title</h2>
+<h2>@Model.Title</h2>
 
 <h3>Questions:</h3>
 @if (Model.Questions!.Count > 0)
 {
-	<ol>
+	<form method="post">
 		@foreach (var question in Model.Questions)
 		{
-			<li>
+			<div>
 				<h4>@question.Text</h4>
-
-				@if (question.Options?.Count > 0)
+				@switch (question.Type)
 				{
-					<ul>
-						@foreach (var option in question.Options)
+					case QuestionType.Mark:
+					{
+						for (var i = 1; i < 11; i++)
 						{
-							<li>@option.Text</li>
+							<div style="display: inline-block; margin-right: 20px;">
+								<span style="display: block; text-align: center;">@i</span>
+								<input type="radio" name="question_@(question.Id)" value="@i" id="radio_@(i)" />
+							</div>
 						}
-					</ul>
+						break;
+					}
+					case QuestionType.MultipleOptions:
+					{
+						foreach (var option in question.Options!)
+						{
+							<input type="radio" name="question_@(question.Id)" value="@option.Id" id ="@option.Id"/>
+							<label for="@option.Id">@option.Text</label><br/>
+						}
+						break;
+					}
+					case QuestionType.Open:
+						<textarea name="question_@(question.Id)" rows="3" cols="40"></textarea>
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
 				}
-			</li>
+			</div>
 		}
-	</ol>
+		<button type="submit">Submit</button>
+	</form>
 }
 else
 {
