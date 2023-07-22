@@ -44,6 +44,7 @@ namespace FormFlow.Controllers
 
 			return View(FormViewModel);
 		}
+		[Authorize]
 		[HttpGet]
 		public async Task<IActionResult> Display(int id)
 		{
@@ -56,9 +57,32 @@ namespace FormFlow.Controllers
 
 			var claims = User.Identity as ClaimsIdentity;
 			var user = _formFlowContext!.Users.FirstOrDefault(u => u.Email == claims!.Name);
+			if (user == null)
+			{
+				return Unauthorized();
+			}
 			var isEmailConfirmed = await _userManager!.IsEmailConfirmedAsync(user!);
 
-			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed)) return View(form);
+			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed))
+			{
+				var viewModel = new FormDisplayViewModel
+				{
+					FormId = form.Id,
+					Title = form.Title,
+					Questions = form.Questions.Select(q => new QuestionViewModel
+					{
+						Id = q.Id,
+						Text = q.Text,
+						Type = (QuestionType)q.Type!,
+						Options = q.Options?.Select(o => new OptionViewModel
+						{
+							Id = o.Id,
+							Text = o.Text
+						}).ToList()
+					}).ToList()
+				};
+				return View(viewModel);
+			}
 			var errorMessage = $"You don't have permission to contribute to this form.\nForm Status is {form.Status}.\n";
 			switch (form.Status)
 			{
