@@ -10,7 +10,7 @@
 <h3>Questions:</h3>
 @if (Model.Questions!.Count > 0)
 {
-	<form method="post">
+	<form method="post" asp-action="SubmitResponse" asp-route-formId="@Model.FormId">
 		@foreach (var question in Model.Questions)
 		{
 			<div>
@@ -32,7 +32,7 @@
 					{
 						foreach (var option in question.Options!)
 						{
-							<input type="radio" name="question_@(question.Id)" value="@option.Id" id ="@option.Id"/>
+							<input type="radio" name="question_@(question.Id)" value="@option.Text" id ="@option.Id"/>
 							<label for="@option.Id">@option.Text</label><br/>
 						}
 						break;
