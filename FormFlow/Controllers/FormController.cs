@@ -309,6 +309,46 @@ namespace FormFlow.Controllers
 			return RedirectToAction("Index");
 		}
 
+		[Authorize]
+		[HttpPost]
+		public async Task<IActionResult> SubmitResponse(int formId, IFormCollection formCollection)
+		{
+			var userEmail = User.Identity!.Name;
+
+			var form = await _dbContext!.Forms.Include(f => f.Questions)!.ThenInclude(q => q.Options).FirstOrDefaultAsync(f => f.Id == formId);
+			if (form == null)
+			{
+				return NotFound();
+			}
+
+			var formResponse = new FormResponse
+			{
+				FormId = formId,
+				Email = userEmail!
+			};
+
+			_dbContext.FormResponses.Add(formResponse);
+			await _dbContext.SaveChangesAsync();
+
+			foreach (var question in form.Questions!)
+			{
+				var userResponse = formCollection["question_" + question.Id];
+
+				var responseEntry = new ResponseEntry
+				{
+					FormResponseId = formResponse.Id,
+					QuestionId = question.Id,
+					Answer = userResponse!
+				};
+
+				_dbContext.ResponseEntries.Add(responseEntry);
+			}
+
+			await _dbContext.SaveChangesAsync();
+
+			return View("ResponseSubmitted");
+		}
+
 		public bool FormHasResponses(int formId)
 		{
 			return _dbContext!.FormResponses.Any(fr => fr.FormId == formId);
