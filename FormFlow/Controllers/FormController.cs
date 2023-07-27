@@ -330,17 +330,15 @@ namespace FormFlow.Controllers
 			_dbContext.FormResponses.Add(formResponse);
 			await _dbContext.SaveChangesAsync();
 
-			foreach (var question in form.Questions!)
+			foreach (var responseEntry in from question in form.Questions!
+										  let userResponse = formCollection["question_" + question.Id]
+										  select new ResponseEntry
+										  {
+											  FormResponseId = formResponse.Id,
+											  QuestionId = question.Id,
+											  Answer = userResponse!
+										  })
 			{
-				var userResponse = formCollection["question_" + question.Id];
-
-				var responseEntry = new ResponseEntry
-				{
-					FormResponseId = formResponse.Id,
-					QuestionId = question.Id,
-					Answer = userResponse!
-				};
-
 				_dbContext.ResponseEntries.Add(responseEntry);
 			}
 
