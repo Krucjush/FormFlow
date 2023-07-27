@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.SqlServer.Server;
 using System.Diagnostics;
+using Microsoft.Extensions.Primitives;
 
 namespace FormFlow.Tests
 {
@@ -1390,6 +1391,133 @@ namespace FormFlow.Tests
 			Assert.Equal("Index", redirectResult.ActionName);
 			Assert.Equal("Home", redirectResult.ControllerName);
 			Assert.Equal(expectedErrorMessage, redirectResult.RouteValues["errorMessage"]);
+		}
+		[Fact]
+		public async Task SubmitResponse_FormNotFound_ReturnsNotFoundResult()
+		{
+			// Arrange
+			const int formId = 1; // Specify the ID of the non-existing form
+
+			// Create an in-memory database
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			await using var dbContext = new AppDbContext(dbContextOptions);
+
+			// Create a mock user identity
+			var mockUserIdentity = new Mock<ClaimsIdentity>();
+			mockUserIdentity.Setup(u => u.Name).Returns("test@example.com");
+
+			// Create a mock claims principal
+			var mockUserPrincipal = new Mock<ClaimsPrincipal>();
+			mockUserPrincipal.Setup(p => p.Identity).Returns(mockUserIdentity.Object);
+
+			// Create a mock HTTP context with the mock user principal
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserPrincipal.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			// Create the controller with the mock controller context and the DbContext
+			var controller = new FormController(dbContext, null, null)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			// Act
+			var result = await controller.SubmitResponse(formId, null);
+
+			// Assert
+			Assert.IsType<NotFoundResult>(result);
+		}
+		[Fact]
+		public async Task SubmitResponse_ValidFormAndData_ReturnsResponseSubmittedView()
+		{
+			// Arrange
+			const int formId = 1; // Specify the ID of the existing form
+
+			// Create an in-memory database
+			var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+				.UseInMemoryDatabase(databaseName: "TestDatabase")
+				.Options;
+
+			await using var dbContext = new AppDbContext(dbContextOptions);
+
+			// Create a sample form with questions and options for testing
+			var form = new Form
+			{
+				Id = formId,
+				Title = "Test",
+				Questions = new List<Question>
+				{
+					new()
+					{
+						Id = 1,
+						Text = "Question 1",
+						Type = QuestionType.Mark
+					},
+					new()
+					{
+						Id = 2,
+						Text = "Question 2",
+						Type = QuestionType.MultipleOptions,
+						Options = new List<Option>
+						{
+							new() { Id = 1, Text = "Option 1" },
+							new() { Id = 2, Text = "Option 2" }
+						}
+					},
+					new() { Id = 3, Text = "Question 3", Type = QuestionType.Open }
+				}
+			};
+
+			dbContext.Forms.Add(form);
+			await dbContext.SaveChangesAsync();
+
+			// Create a mock user identity
+			var mockUserIdentity = new Mock<ClaimsIdentity>();
+			mockUserIdentity.Setup(u => u.Name).Returns("test@example.com");
+
+			// Create a mock claims principal
+			var mockUserPrincipal = new Mock<ClaimsPrincipal>();
+			mockUserPrincipal.Setup(p => p.Identity).Returns(mockUserIdentity.Object);
+
+			// Create a mock HTTP context with the mock user principal
+			var mockHttpContext = new Mock<HttpContext>();
+			mockHttpContext.Setup(c => c.User).Returns(mockUserPrincipal.Object);
+
+			// Create a mock controller context with the mock HTTP context
+			var mockControllerContext = new ControllerContext
+			{
+				HttpContext = mockHttpContext.Object
+			};
+
+			// Create the controller with the mock controller context and the DbContext
+			var controller = new FormController(dbContext, null, null)
+			{
+				ControllerContext = mockControllerContext
+			};
+
+			// Create a mock form collection with user responses
+			var formCollection = new FormCollection(new Dictionary<string, StringValues>
+			{
+				{ "question_1", "4" }, // User response for Question 1 (Mark question)
+                { "question_2", "2" }, // User response for Question 2 (Multiple options question)
+                { "question_3", "Open response" } // User response for Question 3 (Open question)
+            });
+
+			// Act
+			var result = await controller.SubmitResponse(formId, formCollection);
+
+			// Assert
+			Assert.IsType<ViewResult>(result);
+			var viewResult = result as ViewResult;
+			Assert.Equal("ResponseSubmitted", viewResult.ViewName);
 		}
 	}
 }
