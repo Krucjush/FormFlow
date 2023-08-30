@@ -335,15 +335,20 @@
 		}
 
 		function updateQuestionIndexes() {
-			$(".question-group").each(function (index) {
-				var questionIndex = index;
+			$(".question-group").each(function (questionIndex) {
 				$(this).find("label:not(.question-type-label):not(.option-label)").text("Question " + (questionIndex + 1));
-				$(this).find('input[name^="Form.Questions["][name$="].Text"]')
+				$(this).find("label:not(.question-type-label):not(.option-label)").attr("for", "Form_Questions_" + (questionIndex) + "__Text");
+				$(this).find('input[name^="Form.Questions["][name$="].Text"]:not([name*="Options"])')
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
 				$(this).find('input[name^="Form.Questions["][name$="].Type"]')
 					.attr("name", "Form.Questions[" + questionIndex + "].Type")
 					.attr("id", "questionType_" + questionIndex);
+				$(this).find(".options-container").each(function (optionIndex) {
+					$(this).find('.option-group input[name*="].Text"]')
+						.attr("name", "Form.Questions[" + questionIndex + "].Options[" + optionIndex + "].Text")
+						.attr("id", "Form_Questions_" + questionIndex + "__Options_" + optionIndex + "__Text");
+				});
 			});
 		}
 
