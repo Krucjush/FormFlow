@@ -13,8 +13,8 @@ namespace FormFlow.Models
 		[Required(ErrorMessage = "Type is required.")]
 		public QuestionType? Type { get; set; }
 		public List<Option>? Options { get; set; }
-		//public bool Required { get; set; } = true;
-		//public bool? MultipleChoice { get; set; } = false;
+		public bool Required { get; set; } = true;
+		public bool? MultipleChoice { get; set; } = false;
 		public Form Form { get; set; }
 	}
 }

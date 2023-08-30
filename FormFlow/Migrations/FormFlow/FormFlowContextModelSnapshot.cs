@@ -24,7 +24,6 @@ namespace FormFlow.Migrations.FormFlow
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("OwnerId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
@@ -50,7 +49,7 @@ namespace FormFlow.Migrations.FormFlow
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("QuestionId")
+                    b.Property<int>("QuestionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Text")
@@ -71,6 +70,12 @@ namespace FormFlow.Migrations.FormFlow
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("FormId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("MultipleChoice")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Required")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Text")
@@ -329,18 +334,24 @@ namespace FormFlow.Migrations.FormFlow
 
             modelBuilder.Entity("FormFlow.Models.Option", b =>
                 {
-                    b.HasOne("FormFlow.Models.Question", null)
+                    b.HasOne("FormFlow.Models.Question", "Question")
                         .WithMany("Options")
-                        .HasForeignKey("QuestionId");
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("FormFlow.Models.Question", b =>
                 {
-                    b.HasOne("FormFlow.Models.Form", null)
+                    b.HasOne("FormFlow.Models.Form", "Form")
                         .WithMany("Questions")
                         .HasForeignKey("FormId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Form");
                 });
 
             modelBuilder.Entity("FormFlow.Models.UserRole", b =>
