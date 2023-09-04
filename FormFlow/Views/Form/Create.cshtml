@@ -14,7 +14,7 @@
 			<h4>Create:</h4>
 			<div class="mb-3">
 				<label asp-for="Form.Title">Title</label>
-				<input required="required" asp-for="Form.Title" class="form-control"/>
+				<input required="required" asp-for="Form.Title" class="form-control" />
 				<span asp-validation-for="Form.Title" class="text-danger"></span>
 			</div>
 			<h4>Questions:</h4>
@@ -26,8 +26,11 @@
 							<label asp-for="Questions[i].Text" class="flex-grow-1">Question @(i + 1)</label>
 							<button type="button" class="btn btn-danger btn-remove-question">Remove</button>
 						</div>
-						<input required="required" asp-for="Questions[i].Text" class="form-control"/>
+						<input required="required" asp-for="Questions[i].Text" class="form-control" />
 						<span asp-validation-for="Questions[i].Text" class="text-danger"></span>
+						
+						<label asp-for="Questions[i].Required">Required</label>
+						<input type="checkbox" data-question-index="@i" class="required-checkbox" />
 
 						<label asp-for="Questions[i].Type">Type</label>
 						<select asp-for="Questions[i].Type" name="type" class="form-control">
@@ -45,7 +48,7 @@
 				@foreach (FormStatus status in Enum.GetValues(typeof(FormStatus)))
 				{
 					<div class="status-group mb-3">
-						<input class="form-check-input" type="radio" name="Status" value="@status" id="status_@(status)" @(status == FormStatus.Public ? "checked" : "")/>
+						<input class="form-check-input" type="radio" name="Status" value="@status" id="status_@(status)" @(status == FormStatus.Public ? "checked" : "") />
 						<label class="form-check-label" for="status_@(status)">
 							@status
 						</label>
@@ -66,6 +69,7 @@
 	<script>
 		$(document).ready(function () {
 			var questionTypes = [];
+			var requiredList = [];
 			var questionIndex = @Model.Form!.Questions!.Count;
 			var addQuestionBtn = $("#addQuestionBtn");
 
@@ -76,7 +80,8 @@
 					.attr("for", "Form_Questions_" + questionIndex + "__Text")
 					.text("Question " + (questionIndex + 1));
 				$("#questionContainer #questionValidationMsg").remove();
-
+				
+				requiredList[questionIndex] = true;
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -85,6 +90,27 @@
 					.attr("required", "true")
 					.addClass("form-control")
 					.hide();
+
+				var requriedHiddenInput = $("<input>")
+					.attr("type", "hidden")
+					.attr("name", "Form.Questions[" + questionIndex + ".Required")
+					.val("true");
+
+				var requiredCheckbox = $("<input>")
+					.attr("type", "checkbox")
+					.attr("name", "Form.Questions[" + questionIndex + "].Required")
+					.attr("id", "Form_Questions_" + questionIndex + "__Required")
+					.prop("checked", true)
+					.change(function () {
+						var isChecked = this.checked;
+						var questionIndex = $(this).closest(".question-group").index();
+						requiredList[questionIndex] = isChecked;
+					});
+
+				var requiredLabel = $("<label>")
+					.attr("for", "Form_Questions_" + questionIndex + "__Requried")
+					.addClass("question-required-label")
+					.text("Requried");
 
 				var validationMessage = $("<span>")
 					.addClass("text-danger")
@@ -103,6 +129,7 @@
 				questionGroup.append(input);
 				questionGroup.append(validationMessage);
 				questionGroup.append(removeQuestionBtn);
+
 
 				// Add buttons for QuestionType
 				var questionTypeButtons = $("<div>")
@@ -152,8 +179,12 @@
 				}
 
 				questionGroup.append(questionTypeButtons);
+				questionGroup.append(requriedHiddenInput);
+				questionGroup.append(requiredCheckbox);
+				questionGroup.append(requiredLabel);
 
 				questionGroup.insertBefore(addQuestionBtn);
+
 
 				questionIndex++; // Increment questionIndex only when adding a new question
 				updateQuestionIndexes();
@@ -168,12 +199,12 @@
 				$(this).closest(".option-group").remove();
 				updateOptionIndexes($(this).closest(".options-container"));
 			});
-			
+
 
 			$("form").submit(function (event) {
 				event.preventDefault();
-				
-				if	($(".question-group").length === 0) {
+
+				if ($(".question-group").length === 0) {
 					if ($("#questionContainer #questionValidationMsg").length === 0) {
 						var validationMessage = $("<span>")
 							.addClass("text-danger")
@@ -196,7 +227,7 @@
 						if (optionGroups.length === 0) {
 							errorExists = true;
 							var errorSpan = $(this).closest(".question-group").find("#errorSpan");
-							if(errorSpan.length === 0) {
+							if (errorSpan.length === 0) {
 								errorSpan = $("<span>")
 									.text("Multiple options require at least one option")
 									.addClass("text-danger")
@@ -214,8 +245,10 @@
 				}
 
 				var formData = $(this).serializeArray();
-				formData.push({ name: "type", value: questionTypes });
 
+				formData.push({ name: "type", value: questionTypes });
+				formData.push({ name: "requiredList", value: JSON.stringify(requiredList) })
+				 
 				$.ajax({
 					url: "@Url.Action("Create", "Form")",
 					type: "POST",
@@ -286,10 +319,13 @@
 		function updateQuestionIndexes() {
 			$(".question-group").each(function (index) {
 				var questionIndex = index;
-				$(this).find("label:not(.question-type-label):not(.option-label)").text("Question " + (questionIndex + 1));
+				$(this).find("label:not(.question-type-label):not(.option-label):not(.question-required-label)")
+					.text("Question " + (questionIndex + 1));
 				$(this).find("input")
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
+				$(this).find('.question-required-label')
+					.attr("for", "Form_Questions_" + questionIndex + "__Required")
 			});
 		}
 
@@ -311,6 +347,6 @@
 				});
 			});
 		}
-
+		
 	</script>
 }
