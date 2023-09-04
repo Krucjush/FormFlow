@@ -7,7 +7,7 @@ namespace FormFlow.Models.ViewModels
 	{
 		public IEnumerable<Form> ListForms { get; set; }
 		public Form? Form { get; set; }
-        public Question Question { get; set; }
+		public Question Question { get; set; }
 		[Required]
         public List<Question> Questions { get; set; }
         public FormStatus Status { get; set; } = FormStatus.Public;
