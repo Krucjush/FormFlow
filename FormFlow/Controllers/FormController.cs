@@ -325,8 +325,18 @@ namespace FormFlow.Controllers
 				return NotFound();
 			}
 
+            var userResponses = new Dictionary<int, string>();
+
+            foreach (var question in form.Questions!)
+            {
+                var userResponse = formCollection["question_" + question.Id];
+                userResponses[question.Id] = userResponse!;
+            }
+
 			// Check for unanswered required questions
-			var unansweredRequiredQuestions = form.Questions!.Where(q => q.Required && string.IsNullOrWhiteSpace(formCollection["question_" + q.Id])).ToList();
+			var unansweredRequiredQuestions = form.Questions!
+                .Where(q => q.Required && string.IsNullOrWhiteSpace(formCollection["question_" + q.Id]))
+                .ToList();
 
             if (unansweredRequiredQuestions.Any())
             {
@@ -336,7 +346,7 @@ namespace FormFlow.Controllers
                 {
                     FormId = form.Id,
                     Title = form.Title,
-                    Questions = form.Questions.Select(q => new QuestionViewModel
+                    Questions = form.Questions!.Select(q => new QuestionViewModel
                     {
                         Id = q.Id,
                         Text = q.Text,
@@ -346,7 +356,8 @@ namespace FormFlow.Controllers
                             Id = o.Id,
                             Text = o.Text
                         }).ToList(),
-                        Required = q.Required // Include the Required property in the view model
+                        Required = q.Required, // Include the Required property in the view model
+						Answer = userResponses.TryGetValue(q.Id, out var response) ? response : null // Pre-fill the user's previous response
                     }).ToList()
                 };
                 return View("Display", viewModel);
