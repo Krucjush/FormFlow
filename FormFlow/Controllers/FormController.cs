@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using FormFlow.Data;
 using FormFlow.Models;
 using FormFlow.Models.Enums;
@@ -64,13 +65,37 @@ namespace FormFlow.Controllers
 			}
 			var isEmailConfirmed = await _userManager!.IsEmailConfirmedAsync(user!);
 
+            if (TempData.TryGetValue("UserResponses", out var userResponses))
+            {
+                var viewModel = new FormDisplayViewModel
+                {
+                    Form = form,
+                    UserResponses = userResponses as List<FormResponse>,
+                    FormId = form.Id,
+                    Questions = form.Questions!.Select(q => new QuestionViewModel
+                    {
+                        Id = q.Id,
+                        Text = q.Text,
+                        Type = (QuestionType)q.Type!,
+                        Options = q.Options?.Select(o => new OptionViewModel
+                        {
+                            Id = o.Id,
+                            Text = o.Text
+                        }).ToList(),
+                        Required = q.Required
+                    }).ToList(),
+					Title = form.Title
+                };
+				return View(viewModel);
+            }
+
 			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed))
 			{
 				var viewModel = new FormDisplayViewModel
 				{
 					FormId = form.Id,
 					Title = form.Title,
-					Questions = form.Questions.Select(q => new QuestionViewModel
+					Questions = form.Questions!.Select(q => new QuestionViewModel
 					{
 						Id = q.Id,
 						Text = q.Text,
@@ -153,7 +178,7 @@ namespace FormFlow.Controllers
 					Options = q.Options != null ? q.Options.Select(o => new Option { Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
 					Type = Enum.Parse<QuestionType>(typeArray[index]),
-					Required = requiredArray[index]
+					Required = requiredArray![index]
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
@@ -360,7 +385,9 @@ namespace FormFlow.Controllers
 						Answer = userResponses.TryGetValue(q.Id, out var response) ? response : null // Pre-fill the user's previous response
                     }).ToList()
                 };
-                return View("Display", viewModel);
+
+				TempData["UserResponses"] = viewModel.UserResponses;
+                return RedirectToAction("Display", new { id = viewModel.FormId});
             }
 
 			var formResponse = new FormResponse
