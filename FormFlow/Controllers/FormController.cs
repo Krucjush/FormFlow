@@ -229,7 +229,8 @@ namespace FormFlow.Controllers
 						{
 							Text = o.Text
 						}).ToList(),
-						Type = q.Type
+						Type = q.Type,
+						Required = q.Required
 					}).ToList(),
 					Status = form.Status,
 					OwnerId = form.OwnerId
