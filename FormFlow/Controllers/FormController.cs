@@ -79,7 +79,8 @@ namespace FormFlow.Controllers
 						{
 							Id = o.Id,
 							Text = o.Text
-						}).ToList()
+						}).ToList(),
+						Required = q.Required
 					}).ToList()
 				};
 				return View(viewModel);
@@ -323,6 +324,33 @@ namespace FormFlow.Controllers
 			{
 				return NotFound();
 			}
+
+			// Check for unanswered required questions
+			var unansweredRequiredQuestions = form.Questions!.Where(q => q.Required && string.IsNullOrWhiteSpace(formCollection["question_" + q.Id])).ToList();
+
+            if (unansweredRequiredQuestions.Any())
+            {
+                ViewBag.ErrorMessage = "Please answer the following required questions: " +
+                                       string.Join(", ", unansweredRequiredQuestions.Select(q => q.Text));
+                var viewModel = new FormDisplayViewModel
+                {
+                    FormId = form.Id,
+                    Title = form.Title,
+                    Questions = form.Questions.Select(q => new QuestionViewModel
+                    {
+                        Id = q.Id,
+                        Text = q.Text,
+                        Type = (QuestionType)q.Type!,
+                        Options = q.Options?.Select(o => new OptionViewModel
+                        {
+                            Id = o.Id,
+                            Text = o.Text
+                        }).ToList(),
+                        Required = q.Required // Include the Required property in the view model
+                    }).ToList()
+                };
+                return View("Display", viewModel);
+            }
 
 			var formResponse = new FormResponse
 			{
