@@ -27,7 +27,7 @@
                         <span asp-validation-for="@Model.Form.Questions[i].Text" class="text-danger"></span>
 						
                         <label asp-for="Questions[i].Required" class="question-required-label">Required</label>
-						<input type="checkbox" data-question-index="@i" class="required-checkbox" @(Model.Form.Questions[i].Required ? "checked" : "")  />
+						<input type="checkbox" name="Form.RequiredList[@i]" data-question-index="@i" class="required-checkbox" @(Model.Form.Questions[i].Required ? "checked" : "")  />
 						
                         <div class="mb-3">
 							<label asp-for="@Model.Form.Questions[i].Type" class="question-type-label">Type</label>
@@ -83,6 +83,18 @@
 	<script>
 		$(document).ready(function () {
 			var questionTypes = [];
+			var requiredList = [];
+
+			$('.required-checkbox').each(function () {
+				var questionIndex = $(this).data('question-index');
+				requiredList[questionIndex] = this.checked;
+			});
+			// Convert to JSON and store it in a hidden input
+			var requiredListInput = $('<input>')
+				.attr('type', 'hidden')
+				.attr('name', 'Form.RequiredList')
+				.val(JSON.stringify(requiredList));
+			$('#questionContainer').append(requiredListInput);
 			
 			var questionIndex = @Model.Form!.Questions!.Count;
 			var addQuestionBtn = $("#addQuestionBtn");
@@ -95,6 +107,7 @@
 					.text("Question " + (questionIndex + 1));
 				$("#questionContainer #questionValidationMsg").remove();
 
+				requiredList[questionIndex] = true;
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -106,7 +119,7 @@
 
 				var requriedHiddenInput = $("<input>")
 					.attr("type", "hidden")
-					.attr("name", "Form.Questions[" + questionIndex + ".Required")
+					.attr("name", "Form.Questions[" + questionIndex + "].Required")
 					.val("true");
 
 				var requiredCheckbox = $("<input>")
@@ -293,6 +306,7 @@
 				var formData = $(this).serializeArray();
 
 				formData.push({ name: "type", value: questionTypes });
+				formData.push({ name: "requiredList", value: JSON.stringify(requiredList) })
 
 				$.ajax({
 					url: "@Url.Action("Modify", "Form")",
@@ -303,7 +317,8 @@
 						// Redirect or show a success message
 						window.location.href = "@Url.Action("Index", "Form")";
 					},
-					error: function (error) {
+					error: function (xhr, status, error) {
+						console.error(xhr.responseText);
 						// Handle the error response
 						// Show an error message or take appropriate action
 					}

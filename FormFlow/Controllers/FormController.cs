@@ -236,14 +236,14 @@ namespace FormFlow.Controllers
 					OwnerId = form.OwnerId
 				},
 				Status = form.Status,
-				QuestionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList()
+				QuestionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList(),
 			};
 			ViewBag.FormHasResponses = FormHasResponses(formId);
 			return View(formViewModel);
 		}
 		[ValidateAntiForgeryToken]
 		[HttpPatch]
-		public IActionResult Modify(FormViewModel formViewModel, string status, string? type)
+		public IActionResult Modify(FormViewModel formViewModel, string status, string? type, string requiredList)
 		{
 			
 			var claims = User.Identity as ClaimsIdentity;
@@ -266,6 +266,7 @@ namespace FormFlow.Controllers
 
 			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 			var typeArray = new List<string>();
+			var requiredArray = JsonConvert.DeserializeObject<List<bool>>(requiredList);
 			if (type != null)
 			{
 				typeArray = type.Split(',').Select(t => t.Trim()).ToList();
@@ -282,7 +283,8 @@ namespace FormFlow.Controllers
 					Text = q.Text,
 					Options = q.Options != null ? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
-					Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff])
+					Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff]),
+					Required = requiredArray![index]
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
@@ -306,7 +308,8 @@ namespace FormFlow.Controllers
 							? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList()
 							: new List<Option>(),
 						FormId = 0,
-						Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff])
+						Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff]),
+						Required = requiredArray![index]
 					}).ToList(),
 					Status = Enum.Parse<FormStatus>(status),
 					OwnerId = idClaim.Value

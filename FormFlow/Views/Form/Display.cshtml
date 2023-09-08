@@ -25,13 +25,15 @@
         @foreach (var question in Model.Questions)
         {
             <div @if (question.Required)
-            {
-                @:class="required-question"
-            }>
-                <h4>@question.Text @if (question.Required)
+         {
+         @:class="required-question"
+         }>
+                <h4>
+                    @question.Text @if (question.Required)
                     {
                         <span>*</span>
-                    }</h4>
+                    }
+                </h4>
                 @switch (question.Type)
                 {
                     case QuestionType.Mark:
@@ -74,19 +76,38 @@ else
     <p>No questions found.</p>
 }
 @section Scripts {
-    <script>
+	<script>
         $(document).ready(function () {
+            console.log("Document ready");
             $("form").submit(function (event) {
                 var isValid = true;
 
                 $(".required-question").each(function () {
-                    if ($(this).find(":input").val() === "") {
+                    // Reset the flag for each question
+                    var isQuestionValid = false;
+
+                    // Check if it's a "Mark" question
+                    if ($(this).find(":input[type=radio]").length > 0) {
+                        // Check if at least one radio button is selected
+                        if ($(this).find(":input[type=radio]:checked").length > 0) {
+                            isQuestionValid = true;
+                        }
+                    } else {
+                        // Check other question types (e.g., text input)
+                        if ($(this).find(":input").val() !== "") {
+                            isQuestionValid = true;
+                        }
+                    }
+
+                    if (!isQuestionValid) {
                         isValid = false;
                         $(this).addClass("error");
                     } else {
                         $(this).removeClass("error");
                     }
                 });
+
+                console.log("isValid: " + isValid);
 
                 if (!isValid) {
                     event.preventDefault();
