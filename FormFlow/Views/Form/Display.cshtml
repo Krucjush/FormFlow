@@ -2,53 +2,119 @@
 @model FormFlow.Models.ViewModels.FormDisplayViewModel
 
 @{
-	ViewData["Title"] = "Display Form";
+    ViewData["Title"] = "Display Form";
 }
 
 <h2>@Model.Title</h2>
 
+@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+{
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-danger" role="alert">
+                @ViewData["ErrorMessage"]
+            </div>
+        </div>
+    </div>
+}
+
 <h3>Questions:</h3>
 @if (Model.Questions!.Count > 0)
 {
-	<form method="post" asp-action="SubmitResponse" asp-route-formId="@Model.FormId">
-		@foreach (var question in Model.Questions)
-		{
-			<div>
-				<h4>@question.Text</h4>
-				@switch (question.Type)
-				{
-					case QuestionType.Mark:
-					{
-						for (var i = 1; i < 11; i++)
-						{
-							<div style="display: inline-block; margin-right: 20px;">
-								<span style="display: block; text-align: center;">@i</span>
-								<input type="radio" name="question_@(question.Id)" value="@i" id="radio_@(i)" />
-							</div>
-						}
-						break;
-					}
-					case QuestionType.MultipleOptions:
-					{
-						foreach (var option in question.Options!)
-						{
-							<input type="radio" name="question_@(question.Id)" value="@option.Text" id ="@option.Id"/>
-							<label for="@option.Id">@option.Text</label><br/>
-						}
-						break;
-					}
-					case QuestionType.Open:
-						<textarea name="question_@(question.Id)" rows="3" cols="40"></textarea>
-						break;
-					default:
-						throw new ArgumentOutOfRangeException();
-				}
-			</div>
-		}
-		<button type="submit">Submit</button>
-	</form>
+    <form method="post" asp-action="SubmitResponse" asp-route-formId="@Model.FormId">
+        @foreach (var question in Model.Questions)
+        {
+            <div @if (question.Required)
+         {
+         @:class="required-question"
+         }>
+                <h4>
+                    @question.Text @if (question.Required)
+                    {
+                        <span>*</span>
+                    }
+                </h4>
+                @switch (question.Type)
+                {
+                    case QuestionType.Mark:
+                        {
+                            for (var i = 1; i < 11; i++)
+                            {
+                                <div style="display: inline-block; margin-right: 20px;">
+                                    <span style="display: block; text-align: center;">@i</span>
+                                    <input type="radio" name="question_@(question.Id)" value="@i" id="radio_@(i)" />
+                                </div>
+                            }
+                            break;
+                        }
+                    case QuestionType.MultipleOptions:
+                        {
+                            foreach (var option in question.Options!)
+                            {
+                                <input type="radio" name="question_@(question.Id)" value="@option.Text" id="@option.Id" />
+                                <label for="@option.Id">@option.Text</label>
+                                <br />
+                            }
+                            break;
+                        }
+                    case QuestionType.Open:
+                        {
+                            <textarea name="question_@(question.Id)" rows="3" cols="40"></textarea>
+                        }
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            </div>
+        }
+        <button type="submit">Submit</button>
+    </form>
+    <p>`*` marks required questions</p>
 }
 else
 {
-	<p>No questions found.</p>
+    <p>No questions found.</p>
+}
+@section Scripts {
+	<script>
+        $(document).ready(function () {
+            console.log("Document ready");
+            $("form").submit(function (event) {
+                var isValid = true;
+
+                $(".required-question").each(function () {
+                    // Reset the flag for each question
+                    var isQuestionValid = false;
+
+                    // Check if it's a "Mark" question
+                    if ($(this).find(":input[type=radio]").length > 0) {
+                        // Check if at least one radio button is selected
+                        if ($(this).find(":input[type=radio]:checked").length > 0) {
+                            isQuestionValid = true;
+                        }
+                    } else {
+                        // Check other question types (e.g., text input)
+                        if ($(this).find(":input").val() !== "") {
+                            isQuestionValid = true;
+                        }
+                    }
+
+                    if (!isQuestionValid) {
+                        isValid = false;
+                        $(this).addClass("error");
+                    } else {
+                        $(this).removeClass("error");
+                    }
+                });
+
+                console.log("isValid: " + isValid);
+
+                if (!isValid) {
+                    event.preventDefault();
+                    // Display an error message or handle it as needed
+                    alert("Please answer all required questions.");
+                }
+            });
+        });
+    </script>
 }

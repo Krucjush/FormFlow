@@ -24,9 +24,12 @@
 							<button type="button" class="btn btn-danger remove-question-btn">Remove</button>
 						</div>
 						<input required="required" asp-for="@Model.Form.Questions[i].Text" class="form-control" value="@Model.Form.Questions![i].Text" />
-						<span asp-validation-for="@Model.Form.Questions[i].Text" class="text-danger"></span>
+                        <span asp-validation-for="@Model.Form.Questions[i].Text" class="text-danger"></span>
 						
-						<div class="mb-3">
+                        <label asp-for="Questions[i].Required" class="question-required-label">Required</label>
+						<input type="checkbox" name="Form.RequiredList[@i]" data-question-index="@i" class="required-checkbox" @(Model.Form.Questions[i].Required ? "checked" : "")  />
+						
+                        <div class="mb-3">
 							<label asp-for="@Model.Form.Questions[i].Type" class="question-type-label">Type</label>
 						</div>
 						<input id="questionType_@(i)" asp-for="@Model.Form.Questions[i].Type" class="form-control" value="@Model.Form.Questions[i].Type" readonly="readonly" />
@@ -80,6 +83,18 @@
 	<script>
 		$(document).ready(function () {
 			var questionTypes = [];
+			var requiredList = [];
+
+			$('.required-checkbox').each(function () {
+				var questionIndex = $(this).data('question-index');
+				requiredList[questionIndex] = this.checked;
+			});
+			// Convert to JSON and store it in a hidden input
+			var requiredListInput = $('<input>')
+				.attr('type', 'hidden')
+				.attr('name', 'Form.RequiredList')
+				.val(JSON.stringify(requiredList));
+			$('#questionContainer').append(requiredListInput);
 			
 			var questionIndex = @Model.Form!.Questions!.Count;
 			var addQuestionBtn = $("#addQuestionBtn");
@@ -92,6 +107,7 @@
 					.text("Question " + (questionIndex + 1));
 				$("#questionContainer #questionValidationMsg").remove();
 
+				requiredList[questionIndex] = true;
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -100,6 +116,27 @@
 					.attr("required", "true")
 					.addClass("form-control")
 					.hide();
+
+				var requriedHiddenInput = $("<input>")
+					.attr("type", "hidden")
+					.attr("name", "Form.Questions[" + questionIndex + "].Required")
+					.val("true");
+
+				var requiredCheckbox = $("<input>")
+					.attr("type", "checkbox")
+					.attr("name", "Form.Questions[" + questionIndex + "].Required")
+					.attr("id", "Form_Questions_" + questionIndex + "__Required")
+					.prop("checked", true)
+					.change(function () {
+						var isChecked = this.checked;
+						var questionIndex = $(this).closest(".question-group").index();
+						requiredList[questionIndex] = isChecked;
+					});
+
+				var requiredLabel = $("<label>")
+					.attr("for", "Form_Questions_" + questionIndex + "__Requried")
+					.addClass("question-required-label")
+					.text("Requried");
 
 				var validationMessage = $("<span>")
 					.addClass("text-danger")
@@ -167,6 +204,9 @@
 				}
 
 				questionGroup.append(questionTypeButtons);
+				questionGroup.append(requriedHiddenInput);
+				questionGroup.append(requiredCheckbox);
+				questionGroup.append(requiredLabel);
 
 				questionGroup.insertBefore(addQuestionBtn);
 
@@ -266,6 +306,7 @@
 				var formData = $(this).serializeArray();
 
 				formData.push({ name: "type", value: questionTypes });
+				formData.push({ name: "requiredList", value: JSON.stringify(requiredList) })
 
 				$.ajax({
 					url: "@Url.Action("Modify", "Form")",
@@ -276,7 +317,8 @@
 						// Redirect or show a success message
 						window.location.href = "@Url.Action("Index", "Form")";
 					},
-					error: function (error) {
+					error: function (xhr, status, error) {
+						console.error(xhr.responseText);
 						// Handle the error response
 						// Show an error message or take appropriate action
 					}
@@ -336,8 +378,8 @@
 
 		function updateQuestionIndexes() {
 			$(".question-group").each(function (questionIndex) {
-				$(this).find("label:not(.question-type-label):not(.option-label)").text("Question " + (questionIndex + 1));
-				$(this).find("label:not(.question-type-label):not(.option-label)").attr("for", "Form_Questions_" + (questionIndex) + "__Text");
+				$(this).find("label:not(.question-type-label):not(.option-label):not(.question-required-label)").text("Question " + (questionIndex + 1));
+				$(this).find("label:not(.question-type-label):not(.option-label):not(.question-required-label)").attr("for", "Form_Questions_" + (questionIndex) + "__Text");
 				$(this).find('input[name^="Form.Questions["][name$="].Text"]:not([name*="Options"])')
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
@@ -349,6 +391,8 @@
 						.attr("name", "Form.Questions[" + questionIndex + "].Options[" + optionIndex + "].Text")
 						.attr("id", "Form_Questions_" + questionIndex + "__Options_" + optionIndex + "__Text");
 				});
+				$(this).find('.question-required-label')
+					.attr("for", "Form_Questions_" + questionIndex + "__Required");
 			});
 		}
 

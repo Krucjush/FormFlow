@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using FormFlow.Data;
 using FormFlow.Models;
 using FormFlow.Models.Enums;
@@ -64,13 +65,37 @@ namespace FormFlow.Controllers
 			}
 			var isEmailConfirmed = await _userManager!.IsEmailConfirmedAsync(user!);
 
+            if (TempData.TryGetValue("UserResponses", out var userResponses))
+            {
+                var viewModel = new FormDisplayViewModel
+                {
+                    Form = form,
+                    UserResponses = userResponses as List<FormResponse>,
+                    FormId = form.Id,
+                    Questions = form.Questions!.Select(q => new QuestionViewModel
+                    {
+                        Id = q.Id,
+                        Text = q.Text,
+                        Type = (QuestionType)q.Type!,
+                        Options = q.Options?.Select(o => new OptionViewModel
+                        {
+                            Id = o.Id,
+                            Text = o.Text
+                        }).ToList(),
+                        Required = q.Required
+                    }).ToList(),
+					Title = form.Title
+                };
+				return View(viewModel);
+            }
+
 			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed))
 			{
 				var viewModel = new FormDisplayViewModel
 				{
 					FormId = form.Id,
 					Title = form.Title,
-					Questions = form.Questions.Select(q => new QuestionViewModel
+					Questions = form.Questions!.Select(q => new QuestionViewModel
 					{
 						Id = q.Id,
 						Text = q.Text,
@@ -79,7 +104,8 @@ namespace FormFlow.Controllers
 						{
 							Id = o.Id,
 							Text = o.Text
-						}).ToList()
+						}).ToList(),
+						Required = q.Required
 					}).ToList()
 				};
 				return View(viewModel);
@@ -152,7 +178,7 @@ namespace FormFlow.Controllers
 					Options = q.Options != null ? q.Options.Select(o => new Option { Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
 					Type = Enum.Parse<QuestionType>(typeArray[index]),
-					Required = requiredArray[index]
+					Required = requiredArray![index]
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
@@ -203,20 +229,21 @@ namespace FormFlow.Controllers
 						{
 							Text = o.Text
 						}).ToList(),
-						Type = q.Type
+						Type = q.Type,
+						Required = q.Required
 					}).ToList(),
 					Status = form.Status,
 					OwnerId = form.OwnerId
 				},
 				Status = form.Status,
-				QuestionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList()
+				QuestionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList(),
 			};
 			ViewBag.FormHasResponses = FormHasResponses(formId);
 			return View(formViewModel);
 		}
 		[ValidateAntiForgeryToken]
 		[HttpPatch]
-		public IActionResult Modify(FormViewModel formViewModel, string status, string? type)
+		public IActionResult Modify(FormViewModel formViewModel, string status, string? type, string requiredList)
 		{
 			
 			var claims = User.Identity as ClaimsIdentity;
@@ -239,6 +266,7 @@ namespace FormFlow.Controllers
 
 			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 			var typeArray = new List<string>();
+			var requiredArray = JsonConvert.DeserializeObject<List<bool>>(requiredList);
 			if (type != null)
 			{
 				typeArray = type.Split(',').Select(t => t.Trim()).ToList();
@@ -255,7 +283,8 @@ namespace FormFlow.Controllers
 					Text = q.Text,
 					Options = q.Options != null ? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
-					Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff])
+					Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff]),
+					Required = requiredArray![index]
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
@@ -279,7 +308,8 @@ namespace FormFlow.Controllers
 							? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList()
 							: new List<Option>(),
 						FormId = 0,
-						Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff])
+						Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff]),
+						Required = requiredArray![index]
 					}).ToList(),
 					Status = Enum.Parse<FormStatus>(status),
 					OwnerId = idClaim.Value
@@ -323,6 +353,46 @@ namespace FormFlow.Controllers
 			{
 				return NotFound();
 			}
+
+            var userResponses = new Dictionary<int, string>();
+
+            foreach (var question in form.Questions!)
+            {
+                var userResponse = formCollection["question_" + question.Id];
+                userResponses[question.Id] = userResponse!;
+            }
+
+			// Check for unanswered required questions
+			var unansweredRequiredQuestions = form.Questions!
+                .Where(q => q.Required && string.IsNullOrWhiteSpace(formCollection["question_" + q.Id]))
+                .ToList();
+
+            if (unansweredRequiredQuestions.Any())
+            {
+                ViewBag.ErrorMessage = "Please answer the following required questions: " +
+                                       string.Join(", ", unansweredRequiredQuestions.Select(q => q.Text));
+                var viewModel = new FormDisplayViewModel
+                {
+                    FormId = form.Id,
+                    Title = form.Title,
+                    Questions = form.Questions!.Select(q => new QuestionViewModel
+                    {
+                        Id = q.Id,
+                        Text = q.Text,
+                        Type = (QuestionType)q.Type!,
+                        Options = q.Options?.Select(o => new OptionViewModel
+                        {
+                            Id = o.Id,
+                            Text = o.Text
+                        }).ToList(),
+                        Required = q.Required, // Include the Required property in the view model
+						Answer = userResponses.TryGetValue(q.Id, out var response) ? response : null // Pre-fill the user's previous response
+                    }).ToList()
+                };
+
+				TempData["UserResponses"] = viewModel.UserResponses;
+                return RedirectToAction("Display", new { id = viewModel.FormId});
+            }
 
 			var formResponse = new FormResponse
 			{
