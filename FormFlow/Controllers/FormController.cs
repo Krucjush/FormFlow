@@ -232,7 +232,8 @@ namespace FormFlow.Controllers
 							Text = o.Text
 						}).ToList(),
 						Type = q.Type,
-						Required = q.Required
+						Required = q.Required,
+						MultipleChoice = q.MultipleChoice
 					}).ToList(),
 					Status = form.Status,
 					OwnerId = form.OwnerId
@@ -245,7 +246,7 @@ namespace FormFlow.Controllers
 		}
 		[ValidateAntiForgeryToken]
 		[HttpPatch]
-		public IActionResult Modify(FormViewModel formViewModel, string status, string? type, string requiredList)
+		public IActionResult Modify(FormViewModel formViewModel, string status, string? type, string requiredList, string multipleChoiceList)
 		{
 			
 			var claims = User.Identity as ClaimsIdentity;
@@ -269,6 +270,16 @@ namespace FormFlow.Controllers
 			formViewModel.ListForms = _dbContext.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
 			var typeArray = new List<string>();
 			var requiredArray = JsonConvert.DeserializeObject<List<bool>>(requiredList);
+			var multipleChoiceArray = new List<bool>(); // Initialize an empty list
+
+			if (!string.IsNullOrEmpty(multipleChoiceList))
+			{
+				// Deserialize the JSON string into a list of nullable booleans
+				var tempArray = JsonConvert.DeserializeObject<List<bool?>>(multipleChoiceList);
+
+				// Ensure all elements in the list are non-null; replace null with false
+				multipleChoiceArray.AddRange(tempArray!.Select(item => item ?? false));
+			}
 			if (type != null)
 			{
 				typeArray = type.Split(',').Select(t => t.Trim()).ToList();
@@ -286,7 +297,8 @@ namespace FormFlow.Controllers
 					Options = q.Options != null ? q.Options.Select(o => new Option { Id = o.Id, Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
 					Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff]),
-					Required = requiredArray![index]
+					Required = requiredArray![index],
+					MultipleChoice = multipleChoiceArray[index]
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
@@ -311,7 +323,8 @@ namespace FormFlow.Controllers
 							: new List<Option>(),
 						FormId = 0,
 						Type = q.Type ?? Enum.Parse<QuestionType>(typeArray[index - diff]),
-						Required = requiredArray![index]
+						Required = requiredArray![index],
+						MultipleChoice = multipleChoiceArray[index]
 					}).ToList(),
 					Status = Enum.Parse<FormStatus>(status),
 					OwnerId = idClaim.Value
