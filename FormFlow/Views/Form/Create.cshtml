@@ -70,6 +70,7 @@
 		$(document).ready(function () {
 			var questionTypes = [];
 			var requiredList = [];
+			var multipleChoiceList = [];
 			var questionIndex = @Model.Form!.Questions!.Count;
 			var addQuestionBtn = $("#addQuestionBtn");
 
@@ -78,10 +79,12 @@
 					.addClass("question-group mb-3");
 				var label = $("<label>")
 					.attr("for", "Form_Questions_" + questionIndex + "__Text")
+					.addClass("question-label")
 					.text("Question " + (questionIndex + 1));
 				$("#questionContainer #questionValidationMsg").remove();
 				
 				requiredList[questionIndex] = true;
+				multipleChoiceList[questionIndex] = false;
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -94,12 +97,14 @@
 				var requriedHiddenInput = $("<input>")
 					.attr("type", "hidden")
 					.attr("name", "Form.Questions[" + questionIndex + ".Required")
+					.addClass("required-hidden-input")
 					.val("true");
 
 				var requiredCheckbox = $("<input>")
 					.attr("type", "checkbox")
 					.attr("name", "Form.Questions[" + questionIndex + "].Required")
 					.attr("id", "Form_Questions_" + questionIndex + "__Required")
+					.addClass("required-checkbox")
 					.prop("checked", true)
 					.change(function () {
 						var isChecked = this.checked;
@@ -113,7 +118,7 @@
 					.text("Requried");
 
 				var validationMessage = $("<span>")
-					.addClass("text-danger")
+					.addClass("text-danger validation-message")
 					.attr("data-valmsg-for", "Form.Questions[" + questionIndex + "].Text");
 
 				var removeQuestionBtn = $("<button>")
@@ -121,8 +126,13 @@
 					.addClass("btn btn-danger btn-remove-question")
 					.text("Remove")
 					.click(function () {
+						var questionIndexToRemove = $(this).closest(".question-group").index();
 						$(this).closest(".question-group").remove();
 						updateQuestionIndexes();
+						questionIndex--
+						questionTypes.splice(questionIndexToRemove, 1);
+						requiredList.splice(questionIndexToRemove, 1);
+						multipleChoiceList.splice(questionIndexToRemove, 1);
 					});
 
 				questionGroup.append(label);
@@ -167,6 +177,23 @@
 									.css("display", "none")
 									.attr("id", "errorSpan");
 								$(this).closest(".question-group").append(errorSpan);
+								var multipleChoiceCheckbox = $("<label>")
+									.text("Multiple Choice")
+									.addClass("multiple-choice-label")
+									.append(
+										$("<input>")
+											.attr("type", "checkbox")
+											.attr("name", "Form.Questions[" + questionIndex + "].MultipleChoice")
+											.attr("id", "multipleChoiceCheckbox")
+											.addClass("multiple-choice-checkbox")
+											.change(function () {
+												var isChecked = this.checked;
+												var questionIndex = $(this).closest(".question-group").index();
+												multipleChoiceList[questionIndex] = isChecked;
+											})
+										)
+								$(this).closest(".question-group").append(multipleChoiceCheckbox);
+								updateQuestionIndexes();
 							} else if (selectedQuestionType === "Open") {
 								$(this).closest(".question-group").find("input").show().addClass("large-input");
 								$(this).closest(".question-group").find(".options-container").remove();
@@ -193,6 +220,8 @@
 			$(document).on("click", ".remove-question-btn", function () {
 				$(this).closest(".question-group").remove();
 				updateQuestionIndexes();
+				questionIndex--;
+				
 			});
 
 			$(document).on("click", ".remove-option-btn", function () {
@@ -248,6 +277,7 @@
 
 				formData.push({ name: "type", value: questionTypes });
 				formData.push({ name: "requiredList", value: JSON.stringify(requiredList) })
+				formData.push({ name: "multipleChoiceList", value: JSON.stringify(multipleChoiceList) })
 				 
 				$.ajax({
 					url: "@Url.Action("Create", "Form")",
@@ -319,13 +349,25 @@
 		function updateQuestionIndexes() {
 			$(".question-group").each(function (index) {
 				var questionIndex = index;
-				$(this).find("label:not(.question-type-label):not(.option-label):not(.question-required-label)")
+				$(this).find(".question-label")
+					.attr("for", "Form_Questions_" + questionIndex + "__Text")
 					.text("Question " + (questionIndex + 1));
-				$(this).find("input")
+				$(this).find(".validation-message")
+					.attr("data-valmsg-for", "Form.Questions[" + questionIndex + "]Text");
+				$(this).find(".question-type-btn")
+					.attr("name", "Form.Questions[" + questionIndex + "].Type");
+				$(this).find(".required-checkbox")
+					.attr("name", "Form.Questions[" + questionIndex + "].Required")
+					.attr("id", "Form_Questions_" + questionIndex + "__Required");
+				$(this).find("input:not(.required-checkbox)")
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
 				$(this).find('.question-required-label')
-					.attr("for", "Form_Questions_" + questionIndex + "__Required")
+					.attr("for", "Form_Questions_" + questionIndex + "__Required");
+				$(this).find('.multiple-choice-checkbox')
+					.attr("name", "Form.Questions[" + questionIndex + "].MultipleChoice");
+				$(this).find(".multiple-choice-checkbox")
+					.attr("name", "Form.Questions[" + questionIndex + "].MultipleChoice")
 			});
 		}
 

@@ -150,7 +150,7 @@ namespace FormFlow.Controllers
 		}
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public IActionResult Create(FormViewModel formViewModel, string status, string type, string requiredList)
+		public IActionResult Create(FormViewModel formViewModel, string status, string type, string requiredList, string multipleChoiceList)
 		{
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
@@ -168,6 +168,7 @@ namespace FormFlow.Controllers
 			
 			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
 			var requiredArray = JsonConvert.DeserializeObject<List<bool>>(requiredList);
+			var multipleChoiceArray = JsonConvert.DeserializeObject<List<bool>>(multipleChoiceList);
 
 			var formDetails = new Form
 			{
@@ -178,7 +179,8 @@ namespace FormFlow.Controllers
 					Options = q.Options != null ? q.Options.Select(o => new Option { Text = o.Text }).ToList() : new List<Option>(),
 					FormId = 0,
 					Type = Enum.Parse<QuestionType>(typeArray[index]),
-					Required = requiredArray![index]
+					Required = requiredArray![index],
+					MultipleChoice = multipleChoiceArray![index]
 				}).ToList(),
 				Status = Enum.Parse<FormStatus>(status),
 				OwnerId = idClaim.Value
