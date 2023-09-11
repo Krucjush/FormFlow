@@ -49,12 +49,24 @@
                         }
                     case QuestionType.MultipleOptions:
                         {
-                            foreach (var option in question.Options!)
-                            {
-                                <input type="radio" name="question_@(question.Id)" value="@option.Text" id="@option.Id" />
-                                <label for="@option.Id">@option.Text</label>
-                                <br />
-                            }
+	                        if (question.MultipleChoice)
+	                        {
+		                        foreach (var option in question.Options!)
+		                        {
+			                        <input type="checkbox" name="question_@(question.Id)" value="@option.Text" id="@option.Id" />
+			                        <label for="@option.Id">@option.Text</label>
+			                        <br />
+		                        }
+	                        }
+	                        else
+	                        {
+		                        foreach (var option in question.Options!)
+		                        {
+			                        <input type="radio" name="question_@(question.Id)" value="@option.Text" id="@option.Id" />
+			                        <label for="@option.Id">@option.Text</label>
+			                        <br />
+		                        }
+	                        }
                             break;
                         }
                     case QuestionType.Open:

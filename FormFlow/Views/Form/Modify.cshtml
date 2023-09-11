@@ -19,6 +19,7 @@
 				@for (var i = 0; i < Model.Form!.Questions!.Count; i++)
 				{
 					<div class="question-group mb-3">
+						
 						<div class="d-flex">
 							<label asp-for="@Model.Form.Questions[i].Text" class="flex-grow-1">Question @(i + 1)</label>
 							<button type="button" class="btn btn-danger remove-question-btn">Remove</button>
@@ -48,6 +49,8 @@
 								}
 								<button type="button" class="btn btn-primary add-option-btn">Add Option</button>
 							</div>
+							<label asp-for="Questions[i].MultipleChoice" class="multiple-choice-label">Multiple Choice</label>
+							<input type="checkbox" name="Form.MultipleChoiceList[@i]" data-question-index="@i" class="multiple-choice-checkbox" @(Model.Form.Questions[i].MultipleChoice ? "checked" : "")  />
 						}
 					</div>
 				}
@@ -84,10 +87,15 @@
 		$(document).ready(function () {
 			var questionTypes = [];
 			var requiredList = [];
+			var multipleChoiceList = []
 
 			$('.required-checkbox').each(function () {
 				var questionIndex = $(this).data('question-index');
 				requiredList[questionIndex] = this.checked;
+			});
+			$('.multiple-choice-checkbox').each(function () {
+				var questionIndex = $(this).data('question-index');
+				multipleChoiceList[questionIndex] = this.checked;
 			});
 			// Convert to JSON and store it in a hidden input
 			var requiredListInput = $('<input>')
@@ -95,6 +103,12 @@
 				.attr('name', 'Form.RequiredList')
 				.val(JSON.stringify(requiredList));
 			$('#questionContainer').append(requiredListInput);
+			
+			var multipleChoiceInput = $("<input>")
+				.attr("type", "hidden")
+				.attr("name", "Form.MultipleChoiceList")
+				.val(JSON.stringify(multipleChoiceList))
+			//$("#questionContainer").append(multipleChoiceList)
 			
 			var questionIndex = @Model.Form!.Questions!.Count;
 			var addQuestionBtn = $("#addQuestionBtn");
@@ -104,10 +118,12 @@
 					.addClass("question-group mb-3");
 				var label = $("<label>")
 					.attr("for", "Form_Questions_" + questionIndex + "__Text")
+					.addClass("question-index-label")
 					.text("Question " + (questionIndex + 1));
 				$("#questionContainer #questionValidationMsg").remove();
 
 				requiredList[questionIndex] = true;
+				multipleChoiceList[questionIndex] = false;
 
 				var input = $("<input>")
 					.attr("type", "text")
@@ -149,6 +165,10 @@
 					.click(function () {
 						$(this).closest(".question-group").remove();
 						updateQuestionIndexes();
+						questionIndex--
+						questionTypes.splice(questionIndexToRemove, 1);
+						requiredList.splice(questionIndexToRemove, 1);
+						multipleChoiceList.splice(questionIndexToRemove, 1);
 					});
 
 				questionGroup.append(label);
@@ -181,6 +201,7 @@
 							if (selectedQuestionType === "Mark") {
 								$(this).closest(".question-group").find("input").show();
 								$(this).closest(".question-group").find(".options-container").remove();
+								multipleChoiceList[questionIndex] = false
 							} else if (selectedQuestionType === "MultipleOptions") {
 								$(this).closest(".question-group").find("input").show();
 								$(this).closest(".question-group").find(".options-container").remove();
@@ -192,9 +213,28 @@
 									.css("display", "none")
 									.attr("id", "errorSpan");
 								$(this).closest(".question-group").append(errorSpan);
+								var multipleChoiceLabel = $("<label>")
+									.text("Multiple Choice")
+									.addClass("multiple-choice-label")
+									.attr("for", "Questions_" + questionIndex + "__MultipleChoice")
+								var multipleChoiceCheckbox = $("<input>")
+									.attr("type", "checkbox")
+									.attr("name", "Form.MultipleChoiceList[" + questionIndex + "]")
+									.attr("data-question-index", questionIndex)
+									.addClass("multiple-choice-checkbox")
+									.change(function () {
+										var isChecked = this.checked;
+										var questionIndex = $(this).closest(".question-group").index();
+										multipleChoiceList[questionIndex] = isChecked;
+										console.log(isChecked)
+									})
+								$(this).closest(".question-group").append(multipleChoiceLabel);
+								$(this).closest(".question-group").append(multipleChoiceCheckbox);
+								updateQuestionIndexes();
 							} else if (selectedQuestionType === "Open") {
 								$(this).closest(".question-group").find("input").show().addClass("large-input");
 								$(this).closest(".question-group").find(".options-container").remove();
+								multipleChoiceList[questionIndex] = false
 							}
 
 							$(this).closest(".question-group").find(".question-type-buttons").remove();
@@ -213,6 +253,13 @@
 				questionIndex++; // Increment questionIndex only when adding a new question
 				updateQuestionIndexes();
 			});
+
+			$(document).on("change", ".multiple-choice-checkbox", function () {
+				var isChecked = this.checked
+				var questionIndex = $(this).closest(".question-group").index()
+				multipleChoiceList[questionIndex] = isChecked
+				console.log(isChecked)
+			})
 
 			$(document).on("click", ".remove-question-btn", function () {
 				$(this).closest(".question-group").remove();
@@ -307,6 +354,7 @@
 
 				formData.push({ name: "type", value: questionTypes });
 				formData.push({ name: "requiredList", value: JSON.stringify(requiredList) })
+				formData.push({ name: "multipleChoiceList", value: JSON.stringify(multipleChoiceList) })
 
 				$.ajax({
 					url: "@Url.Action("Modify", "Form")",
@@ -378,8 +426,9 @@
 
 		function updateQuestionIndexes() {
 			$(".question-group").each(function (questionIndex) {
-				$(this).find("label:not(.question-type-label):not(.option-label):not(.question-required-label)").text("Question " + (questionIndex + 1));
-				$(this).find("label:not(.question-type-label):not(.option-label):not(.question-required-label)").attr("for", "Form_Questions_" + (questionIndex) + "__Text");
+				$(this).find(".question-index-label")
+					.text("Question " + (questionIndex + 1))
+					.attr("for", "Form_Questions_" + (questionIndex) + "__Text");
 				$(this).find('input[name^="Form.Questions["][name$="].Text"]:not([name*="Options"])')
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
