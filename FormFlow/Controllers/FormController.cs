@@ -82,7 +82,8 @@ namespace FormFlow.Controllers
                             Id = o.Id,
                             Text = o.Text
                         }).ToList(),
-                        Required = q.Required
+                        Required = q.Required,
+						MultipleChoice = q.MultipleChoice
                     }).ToList(),
 					Title = form.Title
                 };
@@ -105,7 +106,8 @@ namespace FormFlow.Controllers
 							Id = o.Id,
 							Text = o.Text
 						}).ToList(),
-						Required = q.Required
+						Required = q.Required,
+						MultipleChoice = q.MultipleChoice
 					}).ToList()
 				};
 				return View(viewModel);

@@ -10,5 +10,6 @@ namespace FormFlow.Models.ViewModels
 		public List<OptionViewModel>? Options { get; set; }
         public bool Required { get; set; }
         public string? Answer { get; set; }
+		public bool MultipleChoice { get; set; }
 	}
 }
