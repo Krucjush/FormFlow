@@ -65,6 +65,9 @@ namespace FormFlow.Areas.Identity.Pages.Account
         /// </summary>
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
+        [TempData]
+        public string StatusMessage { get; set; }
+
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -121,6 +124,8 @@ namespace FormFlow.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
+                    var encodedMessage = Uri.EscapeDataString("Verification email sent. Please verify your email to contribute to private forms.");
+                    returnUrl += "?message=" + encodedMessage;
                     _logger.LogInformation("User created a new account with password.");
 
                     var userId = await _userManager.GetUserIdAsync(user);
@@ -134,8 +139,7 @@ namespace FormFlow.Areas.Identity.Pages.Account
 
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+					if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
                         return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
                     }

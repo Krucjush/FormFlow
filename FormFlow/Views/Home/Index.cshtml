@@ -5,11 +5,12 @@
 @model IEnumerable<Form>
 
 <form method="post" class="mt-4">
-	@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+	@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string) || !string.IsNullOrEmpty(ViewData["VerifyEmailMessage"] as string))
 	{
 		<div class="row">
 			<div class="col-12">
 				<div class="alert alert-danger" role="alert">
+					@ViewData["VerifyEmailMessage"]
 					@ViewData["ErrorMessage"]
 				</div>
 			</div>
