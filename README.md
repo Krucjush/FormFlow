@@ -2,6 +2,24 @@
 ___
 Topic number 2 - **application for conducting and collecting survey results**
 ___
+The project has already implemented data to improve testing:
+## User accounts:
+> * ConfirmedUser@example.com
+>> User with confirmed address email, can contribute to private status forms.
+> * NonConfirmedUser@example.com
+>> User with non confirmed address email, cannot contribute to private status forms, but can contribute to `example.com` domain forms.
+> * User@different.com
+>> User with non confirmed address email, with different domain. Cannot contribute to private status forms, and to `example.com` domain forms, but can contribute to `different.com` domain forms.
+## Forms:
+> * Job Satisfaction Survey
+>> Public status form. Every logged in user can contribute to this form.
+> * Product Feedback
+>> Private status form. Only users with confirmed address email can contribute to this form.
+> * Course Evaluation
+>> Domain status form for domain `example.com`.
+> * Domain-Specific Feedback
+>> Domain status form for domain `different.com`.
+___
 Contributors:
 - __[Letmii](https://github.com/Letmii)__
 - __[wsmolarski](https://github.com/wsmolarski)__
