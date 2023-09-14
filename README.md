@@ -10,6 +10,7 @@ The project has already implemented data to improve testing:
 >> User with non confirmed address email, cannot contribute to private status forms, but can contribute to `example.com` domain forms.
 > * User@different.com
 >> User with non confirmed address email, with different domain. Cannot contribute to private status forms, and to `example.com` domain forms, but can contribute to `different.com` domain forms.
+> All users have the same password: `Example1!`
 ## Forms:
 > * Job Satisfaction Survey
 >> Public status form. Every logged in user can contribute to this form.
