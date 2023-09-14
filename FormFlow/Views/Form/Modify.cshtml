@@ -52,6 +52,10 @@
 							<label asp-for="Questions[i].MultipleChoice" class="multiple-choice-label">Multiple Choice</label>
 							<input type="checkbox" name="Form.MultipleChoiceList[@i]" data-question-index="@i" class="multiple-choice-checkbox" @(Model.Form.Questions[i].MultipleChoice ? "checked" : "")  />
 						}
+						else
+						{
+							<input type="hidden" name="Form.MultipleChoiceList[@i]" data-question-index="@i" class="multiple-choice-checkbox" @(Model.Form.Questions[i].MultipleChoice ? "checked" : "") />
+						}
 					</div>
 				}
 				<button type="button" id="addQuestionBtn" class="btn btn-primary">Add Question</button>
