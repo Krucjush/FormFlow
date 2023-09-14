@@ -91,12 +91,12 @@
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text")
 					.attr("required", "true")
-					.addClass("form-control")
+					.addClass("form-control question-text-input")
 					.hide();
 
 				var requriedHiddenInput = $("<input>")
 					.attr("type", "hidden")
-					.attr("name", "Form.Questions[" + questionIndex + ".Required")
+					.attr("name", "Form.Questions[" + questionIndex + "].Required")
 					.addClass("required-hidden-input")
 					.val("true");
 
@@ -359,7 +359,7 @@
 				$(this).find(".required-checkbox")
 					.attr("name", "Form.Questions[" + questionIndex + "].Required")
 					.attr("id", "Form_Questions_" + questionIndex + "__Required");
-				$(this).find("input:not(.required-checkbox)")
+				$(this).find(".question-text-input")
 					.attr("name", "Form.Questions[" + questionIndex + "].Text")
 					.attr("id", "Form_Questions_" + questionIndex + "__Text");
 				$(this).find('.question-required-label')
