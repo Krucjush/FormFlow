@@ -3,6 +3,7 @@ using FormFlow.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Text.Json.Serialization;
 using FormFlow.Interfaces;
 using FormFlow.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -29,6 +30,12 @@ builder.Services.AddRazorPages();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 builder.Services.AddScoped<IFormService, FormService>();
+builder.Services.AddControllers()
+	.AddJsonOptions(o =>
+	{
+		o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+
+	});
 
 var app = builder.Build();
 
@@ -50,6 +57,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
 
 app.MapControllerRoute(
 	name: "default",

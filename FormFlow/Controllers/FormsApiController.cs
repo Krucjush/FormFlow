@@ -16,10 +16,11 @@ namespace FormFlow.Controllers
 		private readonly FormFlowContext _formFlowContext;
 		private readonly UserManager<User> _userManager;
 
-		public FormsApiController(IFormService formService, FormFlowContext formFlowContext)
+		public FormsApiController(IFormService formService, FormFlowContext formFlowContext, UserManager<User> userManager)
 		{
 			_formService = formService;
 			_formFlowContext = formFlowContext;
+			_userManager = userManager;
 		}
 
 		[HttpGet]
@@ -29,7 +30,7 @@ namespace FormFlow.Controllers
 			return Ok(forms);
 		}
 
-		[HttpGet("{id}")]
+		[HttpGet("GetForm/{id}")]
 		public async Task<IActionResult> GetForm(int id)
 		{
 			var form = await _formService.GetFormByIdAsync(id);

@@ -38,7 +38,7 @@
 												<h4><strong>${form.title}</strong></h4>
 											</div>
 											<div class="col-4 my-auto text-center">
-												<a href="/Form/Display/${form.id}" class="btn btn-warning">Contribute</a>
+												<a href="/api/forms/${form.id}" class="btn btn-warning">Contribute</a>
 											</div>
 											<div class="col-2">
 												<!-- Add any other information here if needed -->
@@ -50,10 +50,10 @@
 						}
 					})
 			} else if (response.status === 403) {
-				return response.text()
-					.then(errorMessage => {
-						const errorContainer = document.getElementById('error-message')
-						errorContainer.innerText = errorMessage
+				return response.json()
+					.then(data => {
+						const errorMessage = document.getElementById('error-message')
+						errorMessage.innerText = data.ErrorMessage
 					})
 			} else {
 				console.error('Error:', response.status)

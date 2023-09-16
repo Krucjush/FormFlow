@@ -1,46 +1,60 @@
 ﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
-@model FormFlow.Models.ViewModels.FormViewModel
 
-<form method="post" class="mt-4">
-	<div class="row mt-5">
+<div class="mt-4">
+	<div class="row">
 		<div class="col-12">
-			<p class="fs-3">Your Forms</p>
-			<hr/>
+			<div class="alert alert-danger" role="alert" id="error-message">
+			</div>
 		</div>
 	</div>
-	@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
-	{
-		<div class="row">
-			<div class="col-12">
-				<div class="alert alert-danger" role="alert">
-					@ViewData["ErrorMessage"]
-				</div>
-			</div>
-		</div>
-	}
-	@if (!Model.ListForms.Any())
-	{
-		<div class="row">
-			<div class="col-6">
-				<h4><strong>You don't have any forms created!</strong></h4>
-			</div>
-		</div>
-	}
-	else
-	{
-		@foreach (var form in Model.ListForms)
-		{
-			<div class="row">
-				<div class="col-6">
-					<h4><strong>@form.Title</strong></h4>
-				</div>
-				<div class="col-4 my-auto text-center">
-					<a asp-action="Modify" asp-route-formId="@form.Id" class="btn btn-warning">Modify</a>
-					<a asp-controller="Form" asp-action="Remove" asp-route-formId="@form.Id" class="btn btn-warning">Remove</a>
-				</div>
-			</div>
-			<hr />
-		}
-	}
+
+	<div id="form-list-container">
+		<!-- User forms will be displayed here -->
+	</div>
 	<a asp-controller="Form" asp-action="Create" class="btn btn-success float-end">Add new form</a>
-</form>
+</div>
+
+<script>
+    fetch('/api/forms/user')
+        .then(response => {
+            if (response.status === 200) {
+                return response.json()
+                    .then(forms => {
+                        displayUserForms(forms);
+                    });
+            } else {
+                console.error('Error:', response.status);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.innerText = 'An error occurred while fetching data from the API.';
+        });
+
+    // Function to display user forms
+    function displayUserForms(forms) {
+        const formListContainer = document.getElementById('form-list-container');
+        const errorMessage = document.getElementById('error-message');
+
+        if (forms.length === 0) {
+            errorMessage.innerText = 'You don\'t have any forms created!';
+        } else {
+            errorMessage.style.display = 'none'
+            forms.forEach(form => {
+                const formItem = document.createElement('div');
+                formItem.className = 'row';
+                formItem.innerHTML = `
+                    <div class="col-6">
+                        <h4><strong>${form.title}</strong></h4>
+                    </div>
+                    <div class="col-4 my-auto text-center">
+                        <a href="/Form/Modify/${form.id}" class="btn btn-warning">Modify</a>
+                        <a href="/Form/Remove/${form.id}" class="btn btn-warning">Remove</a>
+                    </div>
+                `;
+                formListContainer.appendChild(formItem);
+            });
+        }
+    }
+</script>
