@@ -18,17 +18,9 @@ namespace FormFlow.Controllers
 			_dbContext = dbContext;
 		}
 
-		public async Task<IActionResult> Index(string? message, string? errorMessage = null)
+		public IActionResult Index()
 		{
-			var forms = await _dbContext.Forms.ToListAsync();
-			if (!message.IsNullOrEmpty())
-			{
-				var decodedMessage = Uri.UnescapeDataString(message);
-				ViewData["VerifyEmailMessage"] = decodedMessage;
-			}
-			ViewData["ErrorMessage"] = errorMessage;
-
-			return View(forms);
+			return View();
 		}
 
 		public IActionResult Privacy()
