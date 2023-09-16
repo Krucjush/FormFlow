@@ -3,6 +3,7 @@ using FormFlow.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
+using FormFlow.Interfaces;
 using FormFlow.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
@@ -27,6 +28,7 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
+builder.Services.AddScoped<IFormService, FormService>();
 
 var app = builder.Build();
 
