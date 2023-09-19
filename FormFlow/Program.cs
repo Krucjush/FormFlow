@@ -6,6 +6,9 @@ using System;
 using FormFlow.Interfaces;
 using FormFlow.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +33,28 @@ builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 builder.Services.AddScoped<IFormService, FormService>();
 
+builder.Services.AddSession(options =>
+{
+	options.IdleTimeout = TimeSpan.FromMinutes(30); // Ustaw czas wygaœniêcia sesji
+	options.Cookie.HttpOnly = true;
+});
+
+// Konfiguracja uwierzytelniania JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateLifetime = true,
+			ValidateIssuerSigningKey = true,
+			ValidIssuer = "twoj_issuer",
+			ValidAudience = "twoj_audience",
+			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("c448d91e57d221aac62742499c6fc9c8a24bee77b9ec7544979dd4d90cbf4658"))
+		};
+	});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -49,7 +74,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapControllerRoute(
 	name: "default",
