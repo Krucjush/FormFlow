@@ -5,6 +5,7 @@ using System.Security.Claims;
 using FormFlow.Data;
 using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Identity;
+using FormFlow.Services;
 
 namespace FormFlow.Controllers
 {
@@ -30,6 +31,7 @@ namespace FormFlow.Controllers
 		}
 
 		[HttpGet("{id}")]
+		[System.Web.Http.Authorize]
 		public async Task<IActionResult> GetForm(int id)
 		{
 			var form = await _formService.GetFormByIdAsync(id);
@@ -39,8 +41,17 @@ namespace FormFlow.Controllers
 				return NotFound();
 			}
 
-			return await IsUserAuthorizedToAccessForm(form) == false ? StatusCode(403, "You do not have permission to access this form.") : Ok(form);
+			var token = HttpContext.Session.GetString("JwtToken");
+
+			return await IsUserAuthorizedToAccessFormByToken(form, token) == false ? StatusCode(403, "You do not have permission to access this form.") : Ok(form);
 		}
+
+		private async Task<bool> IsUserAuthorizedToAccessFormByToken(Form form, string token)
+		{
+			//odszyfrować token 
+			return false;
+		}
+
 
 		private async Task<bool> IsUserAuthorizedToAccessForm(Form form)
 		{
