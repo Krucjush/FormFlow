@@ -7,5 +7,11 @@ namespace FormFlow.Interfaces
 	{
 		Task<List<Form>> GetFormsAsync();
 		Task<Form?> GetFormByIdAsync(int id);
+		Task<bool> SaveFormAsync(Form form);
+		Task<bool> DeleteFormAsync(int id);
+		Task<bool> UpdateFormAsync(Form? form);
+		Task<bool> SaveQuestionAsync(int id, Question question);
+		Task<bool> DeleteQuestionAsync(int id);
+		Task<bool> UpdateQuestionAsync(Question? question);
 	}
 }

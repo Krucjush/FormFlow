@@ -18,7 +18,7 @@ namespace FormFlow.Controllers
 		private readonly FormFlowContext? _formFlowContext;
 		private readonly UserManager<User>? _userManager;
 		public int FormId { get; set; }
-		[BindProperty] 
+		[BindProperty]
 		public FormViewModel? FormViewModel { get; set; }
 
 		public FormController(AppDbContext? dbContext, FormFlowContext? formFlowContext, UserManager<User>? userManager)
@@ -65,30 +65,30 @@ namespace FormFlow.Controllers
 			}
 			var isEmailConfirmed = await _userManager!.IsEmailConfirmedAsync(user!);
 
-            if (TempData.TryGetValue("UserResponses", out var userResponses))
-            {
-                var viewModel = new FormDisplayViewModel
-                {
-                    Form = form,
-                    UserResponses = userResponses as List<FormResponse>,
-                    FormId = form.Id,
-                    Questions = form.Questions!.Select(q => new QuestionViewModel
-                    {
-                        Id = q.Id,
-                        Text = q.Text,
-                        Type = (QuestionType)q.Type!,
-                        Options = q.Options?.Select(o => new OptionViewModel
-                        {
-                            Id = o.Id,
-                            Text = o.Text
-                        }).ToList(),
-                        Required = q.Required,
+			if (TempData.TryGetValue("UserResponses", out var userResponses))
+			{
+				var viewModel = new FormDisplayViewModel
+				{
+					Form = form,
+					UserResponses = userResponses as List<FormResponse>,
+					FormId = form.Id,
+					Questions = form.Questions!.Select(q => new QuestionViewModel
+					{
+						Id = q.Id,
+						Text = q.Text,
+						Type = (QuestionType)q.Type!,
+						Options = q.Options?.Select(o => new OptionViewModel
+						{
+							Id = o.Id,
+							Text = o.Text
+						}).ToList(),
+						Required = q.Required,
 						MultipleChoice = q.MultipleChoice
-                    }).ToList(),
+					}).ToList(),
 					Title = form.Title
-                };
+				};
 				return View(viewModel);
-            }
+			}
 
 			if (CanSubmitResponse(form, user?.Email!, isEmailConfirmed))
 			{
@@ -167,7 +167,7 @@ namespace FormFlow.Controllers
 			}
 
 			formViewModel.ListForms = _dbContext!.Forms.Include(f => f.Questions).Where(f => f.OwnerId == idClaim.Value).ToList();
-			
+
 			var typeArray = type.Split(',').Select(t => t.Trim()).ToList();
 			var requiredArray = JsonConvert.DeserializeObject<List<bool>>(requiredList);
 			var multipleChoiceArray = JsonConvert.DeserializeObject<List<bool>>(multipleChoiceList);
@@ -250,7 +250,7 @@ namespace FormFlow.Controllers
 		[HttpPatch]
 		public IActionResult Modify(FormViewModel formViewModel, string status, string? type, string requiredList, string multipleChoiceList)
 		{
-			
+
 			var claims = User.Identity as ClaimsIdentity;
 			var idClaim = claims?.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -371,45 +371,45 @@ namespace FormFlow.Controllers
 				return NotFound();
 			}
 
-            var userResponses = new Dictionary<int, string>();
+			var userResponses = new Dictionary<int, string>();
 
-            foreach (var question in form.Questions!)
-            {
-                var userResponse = formCollection["question_" + question.Id];
-                userResponses[question.Id] = userResponse!;
-            }
+			foreach (var question in form.Questions!)
+			{
+				var userResponse = formCollection["question_" + question.Id];
+				userResponses[question.Id] = userResponse!;
+			}
 
 			// Check for unanswered required questions
 			var unansweredRequiredQuestions = form.Questions!
-                .Where(q => q.Required && string.IsNullOrWhiteSpace(formCollection["question_" + q.Id]))
-                .ToList();
+				.Where(q => q.Required && string.IsNullOrWhiteSpace(formCollection["question_" + q.Id]))
+				.ToList();
 
-            if (unansweredRequiredQuestions.Any())
-            {
-                ViewBag.ErrorMessage = "Please answer the following required questions: " +
-                                       string.Join(", ", unansweredRequiredQuestions.Select(q => q.Text));
-                var viewModel = new FormDisplayViewModel
-                {
-                    FormId = form.Id,
-                    Title = form.Title,
-                    Questions = form.Questions!.Select(q => new QuestionViewModel
-                    {
-                        Id = q.Id,
-                        Text = q.Text,
-                        Type = (QuestionType)q.Type!,
-                        Options = q.Options?.Select(o => new OptionViewModel
-                        {
-                            Id = o.Id,
-                            Text = o.Text
-                        }).ToList(),
-                        Required = q.Required, // Include the Required property in the view model
+			if (unansweredRequiredQuestions.Any())
+			{
+				ViewBag.ErrorMessage = "Please answer the following required questions: " +
+									   string.Join(", ", unansweredRequiredQuestions.Select(q => q.Text));
+				var viewModel = new FormDisplayViewModel
+				{
+					FormId = form.Id,
+					Title = form.Title,
+					Questions = form.Questions!.Select(q => new QuestionViewModel
+					{
+						Id = q.Id,
+						Text = q.Text,
+						Type = (QuestionType)q.Type!,
+						Options = q.Options?.Select(o => new OptionViewModel
+						{
+							Id = o.Id,
+							Text = o.Text
+						}).ToList(),
+						Required = q.Required, // Include the Required property in the view model
 						Answer = userResponses.TryGetValue(q.Id, out var response) ? response : null // Pre-fill the user's previous response
-                    }).ToList()
-                };
+					}).ToList()
+				};
 
 				TempData["UserResponses"] = viewModel.UserResponses;
-                return RedirectToAction("Display", new { id = viewModel.FormId});
-            }
+				return RedirectToAction("Display", new { id = viewModel.FormId });
+			}
 
 			var formResponse = new FormResponse
 			{
