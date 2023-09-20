@@ -49,8 +49,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 			ValidateAudience = true,
 			ValidateLifetime = true,
 			ValidateIssuerSigningKey = true,
-			ValidIssuer = "twoj_issuer",
-			ValidAudience = "twoj_audience",
+			ValidIssuer = "your_issuer",
+			ValidAudience = "your_audience",
 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("c448d91e57d221aac62742499c6fc9c8a24bee77b9ec7544979dd4d90cbf4658"))
 		};
 	});
