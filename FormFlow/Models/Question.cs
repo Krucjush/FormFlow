@@ -15,6 +15,5 @@ namespace FormFlow.Models
 		public List<Option>? Options { get; set; }
 		public bool Required { get; set; } = true;
 		public bool MultipleChoice { get; set; } = false;
-		public Form Form { get; set; }
 	}
 }

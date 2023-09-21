@@ -9,6 +9,5 @@ namespace FormFlow.Models
 		[Required(ErrorMessage = "QuestionId is required.")]
 		public int QuestionId { get; set; }
 		public string? Answer { get; set; }
-		public FormResponse FormResponse { get; set; }
 	}
 }

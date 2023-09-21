@@ -13,5 +13,7 @@ namespace FormFlow.Interfaces
 		Task<bool> SaveQuestionAsync(int id, Question question);
 		Task<bool> DeleteQuestionAsync(int id);
 		Task<bool> UpdateQuestionAsync(Question? question);
+		Task<bool> SaveAnswerAsync(int id, ResponseEntry responseEntry, string email);
+		Task<List<ResponseEntry>> GetFormResponsesByForm(Form form);
 	}
 }
