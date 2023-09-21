@@ -64,12 +64,21 @@ namespace FormFlow.Controllers
 		[HttpGet("{email}")]
 		public async Task<IActionResult> GetByEmail(string email)
 		{
-			return Ok(await _formFlowContext.Users.FirstOrDefaultAsync(u => u.Email == email));
+			var user = await _formFlowContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+			if (user == null)
+			{
+				return BadRequest("User not found");
+			}
+			return Ok(user);
 		}
 
 		[HttpGet]
 		public async Task<IActionResult> GetAll()
 		{
+			if (!_formFlowContext.Users.Any())
+			{
+				return BadRequest("No users found");
+			}
 			return Ok(await _formFlowContext.Users.ToListAsync());
 		}
 	}
