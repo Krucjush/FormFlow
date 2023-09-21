@@ -22,12 +22,16 @@ The project has already implemented data to improve testing:
 >> Domain status form for domain `different.com`.
 ___
 ## Endpoints:
+
 > Users
+
 >> * [GET\] /api/users/login/{userName}/{password}
 >> * [GET\] /api/users/{email}
 >> * [GET\] /api/users/
 >> * [POST\] /api/users/register
+
 > Forms
+
 >> * [GET\] /api/forms/
 >> * [GET\] /api/forms/display/{id}
 >> * [POST\] /api/forms/create
