@@ -39,35 +39,36 @@ namespace FormFlow.Services
 			return await _dbContext.SaveChangesAsync() > 0;
 		}
 
-		public async Task<bool> DeleteFormAsync(int id)
+		public async Task<int> DeleteFormAsync(int id)
 		{
 			var form = await _dbContext.Forms.FindAsync(id);
 
 			if (form == null)
 			{
-				return false;
+				return 0;
 			}
 
 			if (_dbContext.FormResponses.Any(f => f.FormId == form.Id))
 			{
-				return false;
+				return 1;
 			}
 
 			_dbContext.Forms.Remove(form);
-			return await _dbContext.SaveChangesAsync() > 0;
+			await _dbContext.SaveChangesAsync();
+			return 2;
 		}
 
-		public async Task<bool> UpdateFormAsync(Form? form, string token)
+		public async Task<int> UpdateFormAsync(Form? form, string token)
 		{
 			if (await IsUserAuthorizedToModifyForm(form, token) == false)
 			{
-				return false;
+				return 0;
 			}
 			var formToUpdate = await _dbContext.Forms.FindAsync(form?.Id);
 
 			if (formToUpdate == null)
 			{
-				return false;
+				return 1;
 			}
 
 			if (_dbContext.FormResponses.Any(f => f.FormId == form.Id))
@@ -91,11 +92,11 @@ namespace FormFlow.Services
 				}
 				else
 				{
-					return false;
+					return 2;
 				}
 
 				await _dbContext.SaveChangesAsync();
-				return true;
+				return 3;
 			}
 
 			formToUpdate.Title = form!.Title;
@@ -105,7 +106,9 @@ namespace FormFlow.Services
 
 			
 
-			return await _dbContext.SaveChangesAsync() > 0;
+			await _dbContext.SaveChangesAsync();
+
+			return 4;
 		}
 
 		public async Task<bool> SaveQuestionAsync(int id, Question question)

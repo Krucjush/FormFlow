@@ -62,23 +62,31 @@ namespace FormFlow.Controllers
 		{
 			var token = HttpContext.Session.GetString("JwtToken");
 
-			if (await _formService.UpdateFormAsync(form, token))
-			{
-				return Ok("Form modified.");
-			}
+			var response = await _formService.UpdateFormAsync(form, token);
 
-			return BadRequest("Something went wrong");
+			return response switch
+			{
+				0 => BadRequest("You don't have permission to modify this form."),
+				1 => BadRequest("Form not found."),
+				3 => Ok("Form already has responses, added a new one."),
+				4 => Ok("Form modified"),
+				_ => BadRequest("Something went wrong.")
+			};
 		}
 
 		[HttpDelete("delete/{id}")]
 		public async Task<IActionResult> DeleteForm(int id)
 		{
-			if (await _formService.DeleteFormAsync(id))
-			{
-				return Ok("Form deleted");
-			}
+			var response = await _formService.DeleteFormAsync(id);
 
-			return BadRequest("Something went wrong");
+			return response switch
+			{
+				0 => BadRequest("Form not found."),
+				1 => BadRequest("Form already has responses."),
+				2 => Ok("Form deleted."),
+				_ => BadRequest("Something went wrong.")
+			};
+
 		}
 
 		//QUESTIONS
@@ -154,14 +162,6 @@ namespace FormFlow.Controllers
 			var userDomain = user!.Email!.Split('@')[1];
 
 			return form.Status != FormStatus.Domain || formDomain.Equals(userDomain, StringComparison.OrdinalIgnoreCase);
-		}
-
-		private async Task<bool> IsUserAuthorizedToModifyForm(Form form, string token)
-		{
-			var userName = JwtTokenService.ReadUserFromToken(token);
-			var user = await _formFlowContext.Users.FirstOrDefaultAsync(u => u.Email == userName);
-
-			return form.OwnerId == user.Id;
 		}
 
 
