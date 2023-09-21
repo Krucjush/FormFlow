@@ -23,23 +23,21 @@ The project has already implemented data to improve testing:
 ___
 ## Endpoints:
 > Users
-> 
->> [GET\] /api/users/login/{userName}/{password}
->> [GET\] /api/users/{email}
->> [GET\] /api/users/
->> [POST\] /api/users/register
+>> * [GET\] /api/users/login/{userName}/{password}
+>> * [GET\] /api/users/{email}
+>> * [GET\] /api/users/
+>> * [POST\] /api/users/register
 > Forms
->
->> [GET\] /api/forms/
->> [GET\] /api/forms/display/{id}
->> [POST\] /api/forms/create
->> [PUT\] /api/forms/update
->> [DELETE\] /api/forms/delete/{id}
->> [POST\] /api/forms/createquestion/{id}
->> [PUT\] /api/forms/updatequestion
->> [DELETE\] /api/forms/deletequestion/{id}
->> [POST\] /api/forms/answer/{id}
->> [GET\] /api/forms/responses/{id}
+>> * [GET\] /api/forms/
+>> * [GET\] /api/forms/display/{id}
+>> * [POST\] /api/forms/create
+>> * [PUT\] /api/forms/update
+>> * [DELETE\] /api/forms/delete/{id}
+>> * [POST\] /api/forms/createquestion/{id}
+>> * [PUT\] /api/forms/updatequestion
+>> * [DELETE\] /api/forms/deletequestion/{id}
+>> * [POST\] /api/forms/answer/{id}
+>> * [GET\] /api/forms/responses/{id}
 ___
 Contributors:
 - __[Letmii](https://github.com/Letmii)__
