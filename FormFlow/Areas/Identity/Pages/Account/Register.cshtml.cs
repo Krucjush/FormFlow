@@ -159,7 +159,7 @@ namespace FormFlow.Areas.Identity.Pages.Account
             return Page();
         }
 
-        private User CreateUser()
+        public User CreateUser()
         {
             try
             {
@@ -173,7 +173,7 @@ namespace FormFlow.Areas.Identity.Pages.Account
             }
         }
 
-        private IUserEmailStore<User> GetEmailStore()
+        public IUserEmailStore<User> GetEmailStore()
         {
             if (!_userManager.SupportsUserEmail)
             {

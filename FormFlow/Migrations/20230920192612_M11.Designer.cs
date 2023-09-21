@@ -3,6 +3,7 @@ using System;
 using FormFlow.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FormFlow.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230920192612_M11")]
+    partial class M11
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
@@ -250,11 +253,13 @@ namespace FormFlow.Migrations
 
             modelBuilder.Entity("FormFlow.Models.ResponseEntry", b =>
                 {
-                    b.HasOne("FormFlow.Models.FormResponse", null)
+                    b.HasOne("FormFlow.Models.FormResponse", "FormResponse")
                         .WithMany("Responses")
                         .HasForeignKey("FormResponseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("FormResponse");
                 });
 
             modelBuilder.Entity("FormFlow.Models.UserRole", b =>

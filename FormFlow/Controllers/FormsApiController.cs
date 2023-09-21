@@ -6,6 +6,8 @@ using FormFlow.Data;
 using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using FormFlow.Services;
+using Microsoft.SqlServer.Server;
+using NuGet.Common;
 
 namespace FormFlow.Controllers
 {
@@ -22,7 +24,6 @@ namespace FormFlow.Controllers
 			_formService = formService;
 			_formFlowContext = formFlowContext;
 			_userManager = userManager;
-
 		}
 
 		[HttpGet]
@@ -39,14 +40,9 @@ namespace FormFlow.Controllers
 		{
 			var form = await _formService.GetFormByIdAsync(id);
 
-			foreach (var q in form!.Questions!)
+			foreach (var o in form!.Questions!.SelectMany(q => q!.Options!))
 			{
-				q.Form = null;
-
-				foreach (var o in q!.Options!)
-				{
-					o.Question = null;
-				}
+				o.Question = null;
 			}
 
 			var token = HttpContext.Session.GetString("JwtToken");
@@ -61,10 +57,8 @@ namespace FormFlow.Controllers
 			{
 				return Ok("New form added");
 			}
-			else
-			{
-				return BadRequest("Something went wrong");
-			}
+
+			return BadRequest("Something went wrong");
 		}
 
 		[HttpPut("update")]
@@ -74,10 +68,8 @@ namespace FormFlow.Controllers
 			{
 				return Ok("Form modified");
 			}
-			else
-			{
-				return BadRequest("Something went wrong");
-			}
+
+			return BadRequest("Something went wrong");
 		}
 
 		[HttpDelete("delete/{id}")]
@@ -87,10 +79,8 @@ namespace FormFlow.Controllers
 			{
 				return Ok("Form deleted");
 			}
-			else
-			{
-				return BadRequest("Something went wrong");
-			}
+
+			return BadRequest("Something went wrong");
 		}
 
 		//QUESTIONS
@@ -102,10 +92,8 @@ namespace FormFlow.Controllers
 			{
 				return Ok("New question added");
 			}
-			else
-			{
-				return BadRequest("Something went wrong");
-			}
+
+			return BadRequest("Something went wrong");
 		}
 
 		[HttpPut("updatequestion")]
@@ -115,10 +103,8 @@ namespace FormFlow.Controllers
 			{
 				return Ok("Question modified");
 			}
-			else
-			{
-				return BadRequest("Something went wrong");
-			}
+
+			return BadRequest("Something went wrong");
 		}
 
 		[HttpDelete("deletequestion/{id}")]
@@ -128,12 +114,32 @@ namespace FormFlow.Controllers
 			{
 				return Ok("Question deleted");
 			}
-			else
-			{
-				return BadRequest("Something went wrong");
-			}
+
+			return BadRequest("Something went wrong");
 		}
 
+		[HttpPost("answer/{id}")]
+		public async Task<IActionResult> SubmitAnswer(int id, ResponseEntry responseEntry)
+		{
+			var token = HttpContext.Session.GetString("JwtToken");
+			var userName = JwtTokenService.ReadUserFromToken(token!);
+			if (await _formService.SaveAnswerAsync(id, responseEntry, userName))
+			{
+				return Ok("Response submitted");
+			}
+
+			return BadRequest("Something went wrong");
+		}
+
+		[HttpGet("responses/{id}")]
+		public async Task<IActionResult> GetFormResponses(int id)
+		{
+			var form = await _formService.GetFormByIdAsync(id);
+
+			var formResponses = await _formService.GetFormResponsesByForm(form);
+
+			return formResponses.Count == 0 ? StatusCode(403, "Form has no responses.") : Ok(formResponses);
+		}
 
 		private async Task<bool> IsUserAuthorizedToAccessFormByToken(Form form, string token)
 		{

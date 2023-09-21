@@ -1,6 +1,7 @@
 ﻿using FormFlow.Data;
 using FormFlow.Interfaces;
 using FormFlow.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,11 +46,14 @@ namespace FormFlow.Services
 			{
 				return false;
 			}
-			else
+
+			if (_dbContext.FormResponses.Any(f => f.FormId == form.Id))
 			{
-				_dbContext.Forms.Remove(form);
-				return await _dbContext.SaveChangesAsync() > 0;
+				return false;
 			}
+
+			_dbContext.Forms.Remove(form);
+			return await _dbContext.SaveChangesAsync() > 0;
 		}
 
 		public async Task<bool> UpdateFormAsync(Form? form)
@@ -112,6 +116,47 @@ namespace FormFlow.Services
 			questionToUpdate.MultipleChoice = question.MultipleChoice;
 
 			return await _dbContext.SaveChangesAsync() > 0;
+		}
+
+		public async Task<bool> SaveAnswerAsync(int id, ResponseEntry responseEntry, string email)
+		{
+			var form = await _dbContext.Forms.FindAsync(id);
+
+			if (form == null)
+			{
+				return false;
+			}
+
+			var formResponse = new FormResponse
+			{
+				FormId = id,
+				Email = email
+			};
+			_dbContext.Add(formResponse);
+
+			await _dbContext.SaveChangesAsync();
+
+			responseEntry.FormResponseId = formResponse.Id;
+			_dbContext.Add(responseEntry);
+
+			return await _dbContext.SaveChangesAsync() > 0;
+		}
+
+		public async Task<List<ResponseEntry>> GetFormResponsesByForm(Form form)
+		{
+			var formResponses = await _dbContext.FormResponses.Where(q => q.FormId == form.Id).ToListAsync();
+
+			var responseEntries = new List<ResponseEntry>();
+
+			foreach (var formResponse in formResponses)
+			{
+				var responseEntry = await _dbContext.ResponseEntries.Where(q => q.FormResponseId == formResponse.Id)
+					.ToListAsync();
+
+				responseEntries.AddRange(responseEntry);
+			}
+
+			return responseEntries;
 		}
 	}
 }
