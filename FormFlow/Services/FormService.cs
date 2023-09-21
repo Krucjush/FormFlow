@@ -10,10 +10,11 @@ namespace FormFlow.Services
 	public class FormService : IFormService
 	{
 		private readonly AppDbContext _dbContext;
-
-		public FormService(AppDbContext dbContext)
+		private readonly FormFlowContext _formFlowContext;
+		public FormService(AppDbContext dbContext, FormFlowContext formFlowContext)
 		{
 			_dbContext = dbContext;
+			_formFlowContext = formFlowContext;
 		}
 
 		public async Task<List<Form>> GetFormsAsync()
@@ -56,18 +57,53 @@ namespace FormFlow.Services
 			return await _dbContext.SaveChangesAsync() > 0;
 		}
 
-		public async Task<bool> UpdateFormAsync(Form? form)
+		public async Task<bool> UpdateFormAsync(Form? form, string token)
 		{
+			if (await IsUserAuthorizedToModifyForm(form, token) == false)
+			{
+				return false;
+			}
 			var formToUpdate = await _dbContext.Forms.FindAsync(form?.Id);
 
 			if (formToUpdate == null)
 			{
 				return false;
 			}
+
+			if (_dbContext.FormResponses.Any(f => f.FormId == form.Id))
+			{
+				form.Id = 0;
+				foreach (var question in form.Questions)
+				{
+					question.Id = 0;
+					foreach (var option in question.Options)
+					{
+						option.Id = 0;
+					}
+				}
+
+				if (await SaveFormAsync(form))
+				{
+					foreach (var question in form.Questions)
+					{
+						question.FormId = form.Id;
+					}
+				}
+				else
+				{
+					return false;
+				}
+
+				await _dbContext.SaveChangesAsync();
+				return true;
+			}
+
 			formToUpdate.Title = form!.Title;
 			formToUpdate.Status = form.Status;
 			formToUpdate.OwnerId = form.OwnerId;
 			formToUpdate.Questions = form.Questions;
+
+			
 
 			return await _dbContext.SaveChangesAsync() > 0;
 		}
@@ -157,6 +193,14 @@ namespace FormFlow.Services
 			}
 
 			return responseEntries;
+		}
+
+		private async Task<bool> IsUserAuthorizedToModifyForm(Form form, string token)
+		{
+			var userName = JwtTokenService.ReadUserFromToken(token);
+			var user = await _formFlowContext.Users.FirstOrDefaultAsync(u => u.Email == userName);
+
+			return form.OwnerId == user.Id;
 		}
 	}
 }

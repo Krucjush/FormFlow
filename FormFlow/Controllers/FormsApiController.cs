@@ -6,6 +6,7 @@ using FormFlow.Data;
 using FormFlow.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 using FormFlow.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer.Server;
 using NuGet.Common;
 
@@ -40,11 +41,6 @@ namespace FormFlow.Controllers
 		{
 			var form = await _formService.GetFormByIdAsync(id);
 
-			foreach (var o in form!.Questions!.SelectMany(q => q!.Options!))
-			{
-				o.Question = null;
-			}
-
 			var token = HttpContext.Session.GetString("JwtToken");
 
 			return await IsUserAuthorizedToAccessFormByToken(form, token!) == false ? StatusCode(403, "You do not have permission to access this form.") : Ok(form);
@@ -64,9 +60,11 @@ namespace FormFlow.Controllers
 		[HttpPut("update")]
 		public async Task<IActionResult> UpdateForm(Form? form)
 		{
-			if (await _formService.UpdateFormAsync(form))
+			var token = HttpContext.Session.GetString("JwtToken");
+
+			if (await _formService.UpdateFormAsync(form, token))
 			{
-				return Ok("Form modified");
+				return Ok("Form modified.");
 			}
 
 			return BadRequest("Something went wrong");
@@ -156,6 +154,14 @@ namespace FormFlow.Controllers
 			var userDomain = user!.Email!.Split('@')[1];
 
 			return form.Status != FormStatus.Domain || formDomain.Equals(userDomain, StringComparison.OrdinalIgnoreCase);
+		}
+
+		private async Task<bool> IsUserAuthorizedToModifyForm(Form form, string token)
+		{
+			var userName = JwtTokenService.ReadUserFromToken(token);
+			var user = await _formFlowContext.Users.FirstOrDefaultAsync(u => u.Email == userName);
+
+			return form.OwnerId == user.Id;
 		}
 
 
