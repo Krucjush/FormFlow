@@ -23,22 +23,22 @@ namespace FormFlow.Controllers
 			_formFlowContext = formFlowContext;
 		}
 
-		[HttpGet("login/{userName}/{password}")]
-		public async Task<IActionResult> Login(string userName, string password)
+		[HttpPost("login")]
+		public async Task<IActionResult> Login([FromBody] LoginRequest request)
 		{
-			var user = await _userManager.FindByNameAsync(userName);
+			var user = await _userManager.FindByNameAsync(request.UserName);
 
 			if (user == null)
 			{
 				return BadRequest("Wrong credentials");
 			}
 
-			if (!await _userManager.CheckPasswordAsync(user, password)) return BadRequest("Wrong credentials");
-			var token = JwtTokenService.GenerateJwtToken(userName);
+			if (!await _userManager.CheckPasswordAsync(user, request.Password)) return BadRequest("Wrong credentials");
+			var token = JwtTokenService.GenerateJwtToken(request.UserName);
 
 			HttpContext.Session.SetString("JwtToken", token);
 
-			return Ok("Logged in");
+			return Ok(token);
 
 		}
 
